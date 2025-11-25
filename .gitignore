@@ -1,3 +1,4 @@
 predictions/
 result/
 *.pyc
+.venv/
