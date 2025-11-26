@@ -20,6 +20,19 @@ class BM25Retriever:
         top_chunks = self.bm25.get_top_n(tokenized_query, self.chunks, n=top_k)
         return top_chunks
 
+    def retrieve_multiple(self, queries, top_k=5):
+        """Retrieve with multiple queries and deduplicate"""
+        seen = set()
+        unique_chunks = []
+
+        for q in queries:
+            for chunk in self.retrieve(q, top_k):
+                if chunk['page_content'] not in seen:
+                    seen.add(chunk['page_content'])
+                    unique_chunks.append(chunk)
+
+        return unique_chunks[:top_k]
+
 def create_retriever(chunks, language):
     """Creates a BM25 retriever from document chunks."""
     return BM25Retriever(chunks, language)
