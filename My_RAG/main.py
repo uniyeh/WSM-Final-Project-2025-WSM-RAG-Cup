@@ -4,9 +4,10 @@ from chunker import chunk_documents
 from retriever import create_retriever
 from generator import generate_answer
 from multi_query import generate_multi_queries
+from decomposition import generate_compositional_queries
 import argparse
 
-def main(query_path, docs_path, language, output_path, use_multi_query=False):
+def main(query_path, docs_path, language, output_path, use_multi_query=False, use_compositional_query=False):
     # 1. Load Data
     print("Loading documents...")
     docs_for_chunking = load_jsonl(docs_path)
@@ -41,6 +42,18 @@ def main(query_path, docs_path, language, output_path, use_multi_query=False):
             retrieved_chunks = retriever.retrieve_multiple(query_variations)
             print(f"Retrieved {len(retrieved_chunks)} unique chunks using multi-query")
             print(f"{'='*80}\n")
+        elif use_compositional_query:
+            print(f"\n{'='*80}")
+            print(f"Original Query: {query_text}")
+            print(f"{'-'*80}")
+            compositional_queries = generate_compositional_queries(query_text, num_queries=3, language=language)
+            print(f"Generated {len(compositional_queries)} compositional queries:")
+            for i, q in enumerate(compositional_queries):
+                print(f"  {i+1}. {q}")
+            print(f"{'-'*80}")
+            retrieved_chunks = retriever.retrieve_multiple(compositional_queries)
+            print(f"Retrieved {len(retrieved_chunks)} unique chunks using compositional query")
+            print(f"{'='*80}\n")
         else:
             retrieved_chunks = retriever.retrieve(query_text)
             print(f"Retrieved {len(retrieved_chunks)} chunks using single query")
@@ -62,5 +75,6 @@ if __name__ == "__main__":
     parser.add_argument('--language', help='Language to filter queries (zh or en), if not specified, process all')
     parser.add_argument('--output', help='Path to the output file')      
     parser.add_argument('--use_multi_query', action='store_true', help='Enable multi-query')
+    parser.add_argument('--use_compositional_query', action='store_true', help='Enable compositional query')
     args = parser.parse_args()
-    main(args.query_path, args.docs_path, args.language, args.output, args.use_multi_query)
+    main(args.query_path, args.docs_path, args.language, args.output, args.use_multi_query, args.use_compositional_query)
