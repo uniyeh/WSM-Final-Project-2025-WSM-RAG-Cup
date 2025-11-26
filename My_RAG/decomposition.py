@@ -32,13 +32,13 @@ def generate_compositional_queries(original_query, num_queries=3, language="en")
 
         Provide exactly {num_queries} sub-questions, one per line, without numbering, preamble, or conclusion."""
 
-     try:
+    try:
         client = Client()
         sub_queries = client.generate(model="granite4:3b", prompt=prompt, stream=False)
         queries = [line.strip().lstrip('0123456789.)-• ')
                     for line in sub_queries.get("response", "").split('\n')
                     if line.strip()]
         return [original_query] + queries[:num_queries]
-     except Exception as e:
+    except Exception as e:
         print(f"Error: {e}")
         return [original_query]

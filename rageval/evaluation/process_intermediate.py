@@ -22,6 +22,15 @@ def calculate_averages(data: List[Dict[str, Any]], metric_list: List[str]) -> Di
 def process_folder(folder_path: str, output_file: str, metric_list: List[str]):
     results = {}
     
+    # Load existing results if the file exists
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, 'r', encoding='utf-8') as f:
+                results = json.load(f)
+        except json.JSONDecodeError:
+            print(f"Warning: Could not decode {output_file}. Starting with empty results.")
+            results = {}
+
     for filename in os.listdir(folder_path):
         if filename.endswith('.jsonl'):
             file_path = os.path.join(folder_path, filename)

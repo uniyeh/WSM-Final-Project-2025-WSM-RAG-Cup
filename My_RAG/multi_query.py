@@ -32,13 +32,13 @@ def generate_multi_queries(original_query, num_queries=3, language="en"):
 
         Provide exactly {num_queries} alternative queries, one per line, without numbering, preamble, or conclusion."""
 
-     try:
+    try:
         client = Client()
         response = client.generate(model="granite4:3b", prompt=prompt, stream=False)
         queries = [line.strip().lstrip('0123456789.)-• ')
                     for line in response.get("response", "").split('\n')
                     if line.strip()]
         return [original_query] + queries[:num_queries]
-     except Exception as e:
+    except Exception as e:
         print(f"Error: {e}")
         return [original_query]
