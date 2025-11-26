@@ -32,7 +32,7 @@ class BM25Retriever:
                     unique_chunks.append(chunk)
 
         return unique_chunks[:top_k]
-
+    
 def create_retriever(chunks, language):
     """Creates a BM25 retriever from document chunks."""
     return BM25Retriever(chunks, language)
