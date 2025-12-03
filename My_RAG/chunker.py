@@ -1,23 +1,57 @@
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 def chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
     chunks = []
-    for doc_index, doc in enumerate(docs):
+    
+    if language == "zh":
+        separators = [
+            "\n\n",
+            "\n",
+            "。",
+            "！",
+            "；",
+            "，",
+            "、",
+            " ",
+            ""
+        ]
+    else:
+        separators = [
+            "\n\n",
+            "\n", 
+            ".",
+            " ",
+            ""
+        ]
+    
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        separators=separators,
+        length_function=len,
+        is_separator_regex=False,
+    )
+
+    for doc in docs:
         if 'content' in doc and isinstance(doc['content'], str) and 'language' in doc:
             text = doc['content']
-            text_len = len(text)
             lang = doc['language']
-            start_index = 0
-            chunk_count = 0
+            
             if lang == language:
-                while start_index < text_len:
-                    end_index = min(start_index + chunk_size, text_len)
-                    chunk_metadata = doc.copy()
-                    chunk_metadata.pop('content', None)
+                
+                raw_text_chunks = text_splitter.split_text(text)
+                
+                doc_metadata = doc.copy()
+                doc_metadata.pop('content', None)
+                
+                for chunk_count, content in enumerate(raw_text_chunks):
+                    
+                    chunk_metadata = doc_metadata.copy()
                     chunk_metadata['chunk_index'] = chunk_count
+                    
                     chunk = {
-                        'page_content': text[start_index:end_index],
+                        'page_content': content.strip(),
                         'metadata': chunk_metadata
                     }
                     chunks.append(chunk)
-                    start_index += chunk_size - chunk_overlap
-                    chunk_count += 1
     return chunks
