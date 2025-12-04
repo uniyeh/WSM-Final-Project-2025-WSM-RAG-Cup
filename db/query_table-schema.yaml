@@ -1,0 +1,20 @@
+- table_name: queries
+  columns:
+  - name: id
+    type: INTEGER
+    constraints: PRIMARY KEY AUTOINCREMENT
+  - name: query_id
+    type: INTEGER
+    constraints: NOT NULL
+  - name: domain
+    type: TEXT
+    constraints: NOT NULL
+  - name: language
+    type: TEXT
+    constraints: NOT NULL
+  - name: content
+    type: TEXT
+    constraints: NOT NULL
+  - name: jsonl
+    type: TEXT
+    constraints: NOT NULL

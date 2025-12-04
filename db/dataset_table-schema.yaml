@@ -1,0 +1,44 @@
+- table_name: documents
+  columns:
+  - name: id
+    type: INTEGER
+    constraints: PRIMARY KEY AUTOINCREMENT
+  - name: doc_id
+    type: INTEGER
+    constraints: NOT NULL
+  - name: domain
+    type: TEXT
+    constraints: NOT NULL
+  - name: language
+    type: TEXT
+    constraints: NOT NULL
+  - name: name
+    type: TEXT
+    constraints: NOT NULL
+  - name: content
+    type: TEXT
+    constraints: NOT NULL
+  - name: jsonl
+    type: TEXT
+    constraints: NOT NULL
+
+- table_name: chunks
+  columns:
+  - name: id
+    type: INTEGER
+    constraints: PRIMARY KEY AUTOINCREMENT
+  - name: doc_id
+    type: INTEGER
+    constraints: NOT NULL
+  - name: domain
+    type: TEXT
+    constraints: NOT NULL
+  - name: language
+    type: TEXT
+    constraints: NOT NULL
+  - name: name
+    type: TEXT
+    constraints: NOT NULL
+  - name: content
+    type: TEXT
+    constraints: NOT NULL
