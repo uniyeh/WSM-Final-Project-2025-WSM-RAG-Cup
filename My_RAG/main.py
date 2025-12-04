@@ -4,42 +4,45 @@ from chunker import chunk_documents
 from retriever import create_retriever
 from generator import generate_answer
 import argparse
+from router import router
+from embedding_retriever import embedding_retriever
 
 def main(query_path, docs_path, language, output_path):
-    # 1. Load Data
-    print("Loading documents...")
-    docs_for_chunking = load_jsonl(docs_path)
+    # 1. Load Queries
     queries = load_jsonl(query_path)
-    print(f"Loaded {len(docs_for_chunking)} documents.")
-    print(f"Loaded {len(queries)} queries.")
-
-    # 2. Chunk Documents
-    print("Chunking documents...")
-    chunks = chunk_documents(docs_for_chunking, language)
-    print(f"Created {len(chunks)} chunks.")
-
-    # 3. Create Retriever
-    print("Creating retriever...")
-    retriever = create_retriever(chunks, language)
-    print("Retriever created successfully.")
-
 
     for query in tqdm(queries, desc="Processing Queries"):
-        # 4. Retrieve relevant chunks
+        # 1. Route query
+        print("Routing query[{}]...".format(query['query']['query_id']))
         query_text = query['query']['content']
-        # print(f"\nRetrieving chunks for query: '{query_text}'")
-        retrieved_chunks = retriever.retrieve(query_text, top_k=3)
-        # print(f"Retrieved {len(retrieved_chunks)} chunks.")
+        prediction, doc_id = router(query, language) # prediction: domain, doc_id: list of doc_id
+        print("prediction: {}".format(prediction))
+        print("doc_id: {}".format(doc_id))
+        # 2. Retrieve relevant chunks
+        print("Retrieving chunks...")
+        if (doc_id):
+            retrieved_chunks = embedding_retriever(query_text, language, domain=prediction, doc_ids=doc_id)
+        elif (prediction):
+            retrieved_chunks = embedding_retriever(query_text, language, domain=prediction)
+        else:
+            retrieved_chunks = embedding_retriever(query_text, language, top_k=5)
 
-        # 5. Generate Answer
-        # print("Generating answer...")
-        answer = generate_answer(query_text, retrieved_chunks)
+        chunks = []
+        for chunk in retrieved_chunks:
+            chunks.append({"page_content": chunk})
+        # 2. Retrieve relevant chunks
+        # retrieved_chunks = retriever.retrieve(query_text, top_k=5)
+        # 3. Generate Answer
+        print("Generating answer...")
+        answer = generate_answer(query_text, chunks)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
+        query["prediction"]["references"] = retrieved_chunks
 
     save_jsonl(output_path, queries)
-    print("Predictions saved at '{}'".format(output_path))
+    print("Predictions saved.")
+    print(output_path)
+    print("=====================================")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -31,7 +31,9 @@ def generate_answer(query, context_chunks):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
     prompt = f"""You are an assistant for question-answering tasks. \
 Use the following pieces of retrieved context to answer the question. \
-If you don't know the answer, just say that you don't know. \
+Answer in short and concise. \
+If you don't know the answer, just say that you don't know. No need to explain.\
+If the context doesn't provide any information, just answer: "Unable to answer." \
 Use three sentences maximum and keep the answer concise.\n\nQuestion: {query} \nContext: {context} \nAnswer:\n"""
     ollama_config = load_ollama_config()
     client = Client(host=ollama_config["host"])

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Evaluation Visualizer</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --primary-color: #3b82f6;
+            --secondary-color: #1e293b;
+            --accent-color: #60a5fa;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-section {
+            background-color: var(--secondary-color);
+            border: 2px dashed var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary-color);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        .custom-file-upload:hover {
+            background-color: var(--accent-color);
+        }
+
+        .metrics-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: var(--secondary-color);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--secondary-color);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #1e293b;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            color: var(--text-color);
+        }
+
+        tr:hover {
+            background-color: #2d3748;
+        }
+
+        .score-cell {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .details-row {
+            display: none;
+            background-color: #1a202c;
+        }
+
+        .details-content {
+            padding: 1.5rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-title {
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-text {
+            background-color: #2d3748;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .references-list {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+        }
+
+        .references-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        .score-high {
+            color: var(--success-color);
+        }
+
+        .score-med {
+            color: var(--warning-color);
+        }
+
+        .score-low {
+            color: var(--danger-color);
+        }
+
+        .diff-positive {
+            color: var(--success-color);
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+
+        .diff-negative {
+            color: var(--danger-color);
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+
+        .diff-neutral {
+            color: #94a3b8;
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>RAG Evaluation Visualizer</h1>
+            <p>Upload your <code>.jsonl</code> score file to visualize the results.</p>
+        </header>
+
+        <div class="upload-section">
+            <label for="file-upload" class="custom-file-upload">
+                Choose File
+            </label>
+            <input id="file-upload" type="file" accept=".jsonl" />
+            <p id="file-name" style="margin-top: 1rem; color: #94a3b8;"></p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="metrics-summary">
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-rouge">0.00</div>
+                    <div class="metric-label">Avg ROUGE-L</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-words-precision">0.00</div>
+                    <div class="metric-label">Avg Words Precision</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-words-recall">0.00</div>
+                    <div class="metric-label">Avg Words Recall</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-sentences-precision">0.00</div>
+                    <div class="metric-label">Avg Sentences Precision</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-sentences-recall">0.00</div>
+                    <div class="metric-label">Avg Sentences Recall</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-completeness">0.00</div>
+                    <div class="metric-label">Avg Completeness</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-hallucination">0.00</div>
+                    <div class="metric-label">Avg Hallucination</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="avg-irrelevance">0.00</div>
+                    <div class="metric-label">Avg Irrelevance</div>
+                </div>
+            </div>
+
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th width="50"></th>
+                        <th onclick="sortTable('query_id')">ID ↕</th>
+                        <th>Query</th>
+                        <th onclick="sortTable('ROUGELScore')">ROUGE-L ↕</th>
+                        <th onclick="sortTable('Words_Precision')">Words Prec ↕</th>
+                        <th onclick="sortTable('Words_Recall')">Words Rec ↕</th>
+                        <th onclick="sortTable('Sentences_Precision')">Sent Prec ↕</th>
+                        <th onclick="sortTable('Sentences_Recall')">Sent Rec ↕</th>
+                        <th onclick="sortTable('completeness')">Comp ↕</th>
+                        <th onclick="sortTable('hallucination')">Hallu ↕</th>
+                        <th onclick="sortTable('irrelevance')">Irrel ↕</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script id="initial-data" type="text/plain">
+{"domain": "Finance", "language": "en", "query": {"query_id": 2134, "query_type": "Factual Question", "content": "When did Green Fields Agriculture Ltd. appoint a new CEO?"}, "ground_truth": {"doc_ids": [44], "content": "January 2021", "references": ["The first sub-event was the appointment of a new CEO in January 2021."], "keypoints": ["1. Green Fields Agriculture Ltd. appointed a new CEO in January 2021."]}, "prediction": {"content": "Unable to answer.", "references": []}, "ROUGELScore": 0.0, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 1.0, "hallucination": 0.0, "irrelevance": 0.0, "responses": {"complete_ids": [0], "irrelevant_ids": [], "hallucinate_ids": []}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 2158, "query_type": "Irrelevant Unsolvable Question", "content": "Based on Green Fields Agriculture Ltd.'s 2021 report, summarize the environmental and social responsibility measures taken by the company."}, "ground_truth": {"doc_ids": [44], "content": "Unable to answer", "references": [], "keypoints": ["Unable to answer"]}, "prediction": {"content": "Unable to answer.", "references": ["May 2021 marked significant progress for Green Fields Agriculture Ltd. in sustainability, environmental protection, social responsibility, and corporate citizenship. These initiatives had a positive impact on the company's public image and market competitiveness, as they showcased the company's commitment to promoting sustainable development and responsible business practices."]}, "ROUGELScore": 0.999999995, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 1.0, "hallucination": 0.0, "irrelevance": 0.0, "responses": {"complete_ids": [1], "irrelevant_ids": [], "hallucinate_ids": []}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 2137, "query_type": "Multi-hop Reasoning Question", "content": "How did the senior management changes in March 2021, including the appointment of a new CEO in January 2021 and the expansion of farmland in February 2021, contribute to the enhancement of Green Fields Agriculture Ltd.'s market competitiveness?"}, "ground_truth": {"doc_ids": [44], "content": "The senior management changes in March 2021 included the appointment of a new CEO in January 2021, who brought extensive experience in the organic agriculture industry, driving strategic initiatives and enhancing the company's competitive position. Additionally, the expansion of farmland in February 2021 increased production capacity, meeting growing demand and further strengthening the company's market position. These changes collectively enhanced Green Fields Agriculture Ltd.'s market competitiveness.", "references": ["Green Fields Agriculture Ltd., established on April 1, 2005, is a listed NASDAQ company based in Sunnydale, California, specializing in the cultivation and distribution of high-quality organic fruits and vegetables.In March 2021, Green Fields Agriculture Ltd. underwent significant changes in its senior management, which had a profound impact on the company's operational focus and strategic priorities.", "The first sub-event was the appointment of a new CEO in January 2021.", "This new CEO brought extensive experience in the organic agriculture industry, providing fresh leadership to drive strategic initiatives and enhance the company's competitive position.", "The second sub-event was the expansion of farmland in February 2021 through the acquisition of additional land.", "This expansion aimed to increase production capacity and meet the growing demand for organic fruits and vegetables, thereby strengthening the company's position in the market."], "keypoints": ["1. The appointment of a new CEO in January 2021 brought extensive experience in the organic agriculture industry, driving strategic initiatives and enhancing the company's competitive position.", "2. The expansion of farmland in February 2021 increased production capacity, meeting growing demand and further strengthening the company's market position.", "3. These changes collectively enhanced Green Fields Agriculture Ltd.'s market competitiveness."]}, "prediction": {"content": "The appointment of a new CEO in January 2021 brought industry experience, enhancing strategic initiatives. Expansion of farmland in February increased production capacity, strengthening market position. Overall, these changes contributed to improved competitiveness.", "references": ["In March 2021, Green Fields Agriculture Ltd. underwent significant changes in its senior management, which had a profound impact on the company's operational focus and strategic priorities. The first sub-event was the appointment of a new CEO in January 2021. This new CEO brought extensive experience in the organic agriculture industry, providing fresh leadership to drive strategic initiatives and enhance the company's competitive position. The second sub-event was the expansion of farmland in February 2021 through the acquisition of additional land. This expansion aimed to increase production capacity and meet the growing demand for organic fruits and vegetables, thereby strengthening the company's position in the market.", "In January 2021, Green Fields Agriculture Ltd. made a significant equity acquisition by acquiring 40% equity of Green Harvest Farm. This acquisition expanded their market share and enhanced their control over the industry. As part of this acquisition, Green Fields Agriculture Ltd. also purchased an additional 500 acres of farmland, expanding their production capacity and allowing them to cultivate a wider variety of organic fruits and vegetables. The company further invested in the refurbishment of their facilities in February 2021, resulting in improved operational efficiency, reduced water usage, and compliance with organic farming standards."]}, "ROUGELScore": 0.5238095191524944, "Words_Precision": 0.6434782608695652, "Words_Recall": 0.8314606741573034, "Sentences_Precision": 0.395, "Sentences_Recall": 0.5851851851851851, "completeness": 0.3333333333333333, "hallucination": 0.6666666666666666, "irrelevance": 0.0, "responses": {"complete_ids": [0], "irrelevant_ids": [], "hallucinate_ids": []}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 2142, "query_type": "Summary Question", "content": "Based on the outline, summarize the key changes in the governance structure of Green Fields Agriculture Ltd. in 2021."}, "ground_truth": {"doc_ids": [44], "content": "In 2021, Green Fields Agriculture Ltd. experienced significant changes in its governance structure. These changes included senior management changes in March, the appointment of a new CEO in January, and the expansion of farmland in February. Additionally, the company faced compliance and regulatory updates in April, sustainability initiatives in May, and risk management measures in June. Key decisions were made at the shareholders' meeting in August, and ethics and integrity incidents occurred in October. The corporate governance policy was revised in November, and there was a change in the board of directors in December.", "references": ["Green Fields Agriculture Ltd., established on April 1, 2005, is a listed NASDAQ company based in Sunnydale, California, specializing in the cultivation and distribution of high-quality organic fruits and vegetables.In March 2021, Green Fields Agriculture Ltd. underwent significant changes in its senior management, which had a profound impact on the company's operational focus and strategic priorities.", "The first sub-event was the appointment of a new CEO in January 2021.", "The second sub-event was the expansion of farmland in February 2021 through the acquisition of additional land.", "In April 2021, Green Fields Agriculture Ltd. faced updates to regulations affecting corporate governance practices.", "May 2021 marked significant progress for Green Fields Agriculture Ltd. in sustainability, environmental protection, social responsibility, and corporate citizenship.", "In June 2021, Green Fields Agriculture Ltd. implemented risk management measures to enhance its ability to respond to risks and ensure continuous operation and stable development.", "August 2021 witnessed key decisions made at the annual or extraordinary shareholders' meeting, which had a direct impact on the company's governance structure, operational strategies, and shareholder rights.", "In October 2021, the company faced significant ethical or integrity incidents, which had the potential to damage its reputation and brand value.", "In November 2021, Green Fields Agriculture Ltd. revised its corporate governance policy, aiming to enhance transparency, accountability, and stakeholder confidence.", "Finally, in December 2021, there was a change in the board of directors with the appointment or resignation of board members."], "keypoints": ["1. Senior management changes occurred in March.", "2. A new CEO was appointed in January.", "3. The company expanded its farmland in February.", "4. Compliance and regulatory updates took place in April.", "5. Sustainability initiatives were introduced in May.", "6. Risk management measures were implemented in June.", "7. Key decisions were made at the shareholders' meeting in August.", "8. Ethics and integrity incidents occurred in October.", "9. The corporate governance policy was revised in November.", "10. There was a change in the board of directors in December."]}, "prediction": {"content": "In November 2021, Green Fields Agriculture Ltd. revised its corporate governance policy to enhance transparency, accountability, and stakeholder confidence. In March 2021, significant changes occurred including the appointment of a new CEO with industry experience and the acquisition of additional farmland to increase production capacity. These changes aimed at strengthening operational focus, strategic priorities, and market position.", "references": ["In November 2021, Green Fields Agriculture Ltd. revised its corporate governance policy, aiming to enhance transparency, accountability, and stakeholder confidence. This revision reflected the company's commitment to best practices in corporate governance and its dedication to maintaining strong relationships with its stakeholders.", "In March 2021, Green Fields Agriculture Ltd. underwent significant changes in its senior management, which had a profound impact on the company's operational focus and strategic priorities. The first sub-event was the appointment of a new CEO in January 2021. This new CEO brought extensive experience in the organic agriculture industry, providing fresh leadership to drive strategic initiatives and enhance the company's competitive position. The second sub-event was the expansion of farmland in February 2021 through the acquisition of additional land. This expansion aimed to increase production capacity and meet the growing demand for organic fruits and vegetables, thereby strengthening the company's position in the market."]}, "ROUGELScore": 0.3826086907614367, "Words_Precision": 0.6631578947368421, "Words_Recall": 0.45985401459854014, "Sentences_Precision": 0.33783783783783783, "Sentences_Recall": 0.2109704641350211, "completeness": 0.2, "hallucination": 0.0, "irrelevance": 0.8, "responses": {"complete_ids": [3, 7], "irrelevant_ids": [1, 2, 4, 5, 6, 8, 9, 10], "hallucinate_ids": []}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 3200, "query_type": "Multi-document Information Integration Question", "content": "What were the impacts of the dividend distributions made by CleanCo Housekeeping Services in 2018 and Retail Emporium in 2020?"}, "ground_truth": {"doc_ids": [59, 47], "content": "The dividend distribution by CleanCo Housekeeping Services in 2018 returned $2 million to investors and enhanced shareholder returns. Similarly, Retail Emporium's dividend distribution in 2020 returned $5 million to investors and enhanced shareholder returns.", "references": ["Finally, in December, CleanCo decided to distribute $2 million of dividends to its shareholders, enhancing shareholder returns.", "Firstly, the company decided to distribute $5 million in dividends to its shareholders, enhancing shareholder returns."], "keypoints": ["1. CleanCo Housekeeping Services' dividend distribution in 2018 returned $2 million to investors and enhanced shareholder returns.", "2. Retail Emporium's dividend distribution in 2020 returned $5 million to investors and enhanced shareholder returns."]}, "prediction": {"content": "Unable to answer.", "references": []}, "ROUGELScore": 0.07692307488165685, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 0.0, "hallucination": 0.0, "irrelevance": 1.0, "responses": {"complete_ids": [], "irrelevant_ids": [1, 2], "hallucinate_ids": []}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 3205, "query_type": "Multi-document Comparison Question", "content": "Compare the operating income of CleanCo Housekeeping Services in 2018 and Retail Emporium in 2020. Which company had higher operating income?"}, "ground_truth": {"doc_ids": [59, 47], "content": "Retail Emporium had higher operating income in 2020 with $500 million compared to CleanCo Housekeeping Services' $25 million in 2018.", "references": ["The company reported an operating income of $25 million in 2018, influenced by market demand and changes in product prices.", "The operating income for 2020 was $500 million, influenced by market demand and changes in product prices."], "keypoints": ["1. Retail Emporium had higher operating income in 2020.", "2. Retail Emporium's operating income was $500 million in 2020.", "3. CleanCo Housekeeping Services' operating income was $25 million in 2018."]}, "prediction": {"content": "CleanCo Housekeeping Services' operating income in 2018 was $500,000. Retail Emporium's operating income in 2020 was $600,000. Therefore, Retail Emporium had the higher operating income.", "references": []}, "ROUGELScore": 0.6666666616666668, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 0.3333333333333333, "hallucination": 0.0, "irrelevance": 0.6666666666666666, "responses": {"complete_ids": [1], "irrelevant_ids": [2, 3]}}
+{"domain": "Finance", "language": "en", "query": {"query_id": 3209, "query_type": "Multi-document Time Sequence Question", "content": "Compare the major asset acquisitions by CleanCo Housekeeping Services in 2018 and Retail Emporium in 2020. Which company acquired assets earlier?"}, "ground_truth": {"doc_ids": [59, 47], "content": "CleanCo Housekeeping Services acquired assets earlier in March 2018 compared to Retail Emporium's acquisition in July 2020.", "references": ["Additionally, in March, CleanCo completed the asset acquisition of Sparkle Cleaners, a leading provider of commercial cleaning services, with a total value of $8 million.", "This acquisition expanded CleanCo's business scope and enhanced its market competitiveness.", "In July 2020, Retail Emporium completed the asset acquisition of HomeGoods Corporation, with a total value of $100 million.", "This acquisition expanded the company's business scope and enhanced its market competitiveness."], "keypoints": ["1. CleanCo Housekeeping Services acquired assets earlier.", "2. CleanCo Housekeeping Services' acquisition was in March 2018.", "3. Retail Emporium's acquisition was in July 2020."]}, "prediction": {"content": "CleanCo Housekeeping Services made significant asset acquisitions in 2018, while Retail Emporium did so in 2020. Therefore, CleanCo Housekeeping Services acquired assets earlier. Unable to answer.", "references": []}, "ROUGELScore": 0.5263157845983379, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 0.3333333333333333, "hallucination": 0.6666666666666666, "irrelevance": 0.0, "responses": {"complete_ids": [1], "irrelevant_ids": [], "hallucinate_ids": []}}
+{"domain": "Medical", "language": "en", "query": {"query_id": 5962, "query_type": "Summarization Question", "content": "According to the hospitalization records of Parker General Hospital, summarize the present illness of Y. Evans."}, "ground_truth": {"doc_ids": [179], "content": "Y. Evans' illness onset was gradual, noticed 2 months ago with no clear prodrome. Main symptoms include persistent nasal congestion, tinnitus in the left ear, and progressive hearing loss in the same ear, which have worsened over the past month. Symptoms temporarily alleviate with decongestants but worsen at night and with exertion. Accompanying symptoms include intermittent blood-tinged nasal discharge, headaches, occasional facial numbness, double vision, and a noticeable lump on the left side of the neck. She visited a local clinic 1 month ago and was prescribed decongestants and antibiotics with minimal relief. Nasal endoscopy and CT scan revealed a lesion in the nasopharynx, leading to her referral to Parker General Hospital. Her mental state and sleep are unaffected, appetite is slightly decreased, and she has experienced weight loss (~5lbs in the past month). Normal urination and defecation.", "references": ["Present Illness:", "Onset: Onset was gradual, noticed 2 months ago, no clear prodrome", "Main Symptoms: Persistent nasal congestion, tinnitus in the left ear, progressive hearing loss in the same ear.", "Severity has increased over the past month.", "Symptoms temporarily alleviate with decongestants, but aggravate at night and with exertion.", "Accompanying Symptoms: Intermittent blood-tinged nasal discharge, headaches, occasional facial numbness, double vision, and a noticeable lump on the left side of the neck.", "Diagnosis and Treatment History: Visited local clinic 1 month ago; prescribed decongestants and antibiotics with minimal relief.", "Underwent nasal endoscopy and CT scan revealing a lesion in the nasopharynx.", "Referred to our hospital for further management.", "General Condition Changes: Mental state and sleep unaffected; appetite slightly decreased, experiencing weight loss (~5lbs in the past month).", "Normal urination and defecation."], "keypoints": ["1. Y. Evans' illness onset was gradual, noticed 2 months ago with no clear prodrome.", "2. Main symptoms: persistent nasal congestion, tinnitus in the left ear, and progressive hearing loss in the same ear.", "3. Symptoms worsen at night and with exertion, temporarily alleviated by decongestants.", "4. Accompanying symptoms: intermittent blood-tinged nasal discharge, headaches, occasional facial numbness, double vision, and a noticeable lump on the left side of the neck.", "5. Minimal relief from decongestants and antibiotics prescribed at a local clinic 1 month ago.", "6. Nasal endoscopy and CT scan revealed a lesion in the nasopharynx, leading to referral to Parker General Hospital.", "7. Mental state and sleep unaffected, slight decrease in appetite, and weight loss (~5lbs in the past month).", "8. Normal urination and defecation."]}, "prediction": {"content": "Unable to answer.", "references": []}, "ROUGELScore": 0.018691588240020977, "Words_Precision": 0.0, "Words_Recall": 0.0, "Sentences_Precision": 0.0, "Sentences_Recall": 0.0, "completeness": 0.125, "hallucination": 0.875, "irrelevance": 0.0, "responses": {"complete_ids": [1], "irrelevant_ids": [], "hallucinate_ids": []}}
+</script>
+    <script>
+        let currentData = [];
+        let baselineData = new Map(); // Store baseline data by query_id
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const initialDataElement = document.getElementById('initial-data');
+            if (initialDataElement) {
+                const content = initialDataElement.textContent.trim();
+                if (content) {
+                    const lines = content.split('\n');
+                    const parsedData = lines.map(line => {
+                        try {
+                            return JSON.parse(line);
+                        } catch (e) {
+                            return null;
+                        }
+                    }).filter(item => item !== null);
+
+                    if (parsedData.length > 0) {
+                        // Initialize baseline data
+                        parsedData.forEach(item => {
+                            if (item.query && item.query.query_id) {
+                                baselineData.set(item.query.query_id, item);
+                            }
+                        });
+
+                        // Set current data to initial data as well
+                        currentData = parsedData;
+
+                        // Default sort by query_id
+                        currentData.sort((a, b) => {
+                            let valA = a.query?.query_id ?? 0;
+                            let valB = b.query?.query_id ?? 0;
+                            return valA - valB;
+                        });
+
+                        document.getElementById('file-name').textContent = 'Loaded from result/score_en.jsonl (Baseline)';
+                        renderDashboard();
+                    }
+                }
+            }
+        });
+
+        document.getElementById('file-upload').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const fileNameElement = document.getElementById('file-name');
+            if (fileNameElement) {
+                fileNameElement.textContent = file.name;
+            } else {
+                console.error('Element with id "file-name" not found');
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const lines = content.trim().split('\n');
+                currentData = lines.map(line => {
+                    try {
+                        return JSON.parse(line);
+                    } catch (e) {
+                        return null;
+                    }
+                }).filter(item => item !== null);
+
+                // Default sort by query_id
+                currentData.sort((a, b) => {
+                    let valA = a.query?.query_id ?? 0;
+                    let valB = b.query?.query_id ?? 0;
+                    return valA - valB;
+                });
+
+                renderDashboard();
+            };
+            reader.readAsText(file);
+        });
+
+        function renderDashboard() {
+            document.getElementById('dashboard').style.display = 'block';
+            calculateAverages();
+            renderTable();
+        }
+
+        function calculateAverages() {
+            const metrics = {
+                'ROUGELScore': 'avg-rouge',
+                'Words_Precision': 'avg-words-precision',
+                'Words_Recall': 'avg-words-recall',
+                'Sentences_Precision': 'avg-sentences-precision',
+                'Sentences_Recall': 'avg-sentences-recall',
+                'completeness': 'avg-completeness',
+                'hallucination': 'avg-hallucination',
+                'irrelevance': 'avg-irrelevance'
+            };
+
+            Object.keys(metrics).forEach(metric => {
+                const sum = currentData.reduce((acc, item) => acc + (item[metric] || 0), 0);
+                const avg = sum / currentData.length;
+                const elementId = metrics[metric];
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = avg.toFixed(3);
+                } else {
+                    console.error(`Element with id "${elementId}" not found`);
+                }
+            });
+        }
+
+        function getColorClass(value) {
+            if (value >= 0.7) return 'score-high';
+            if (value >= 0.4) return 'score-med';
+            return 'score-low';
+        }
+
+        // Inverse color logic for negative metrics like hallucination/irrelevance
+        function getInverseColorClass(value) {
+            if (value <= 0.3) return 'score-high';
+            if (value <= 0.6) return 'score-med';
+            return 'score-low';
+        }
+
+        function getDiffHtml(currentVal, baselineVal) {
+            if (baselineVal === undefined || baselineVal === null) return '';
+
+            const diff = currentVal - baselineVal;
+            if (Math.abs(diff) < 0.001) return '<span class="diff-neutral">(=)</span>';
+
+            const sign = diff > 0 ? '+' : '';
+            const className = diff > 0 ? 'diff-positive' : 'diff-negative';
+            return `<span class="${className}">(${sign}${diff.toFixed(3)})</span>`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            currentData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const queryId = item.query?.query_id ?? 'N/A';
+                const queryText = item.query?.content ?? 'N/A';
+
+                // Get baseline item
+                const baselineItem = baselineData.get(queryId);
+
+                row.innerHTML = `
+                    <td><button class="expand-btn" onclick="toggleDetails(${index})">▶</button></td>
+                    <td>${queryId}</td>
+                    <td>${queryText.substring(0, 60)}${queryText.length > 60 ? '...' : ''}</td>
+                    <td class="score-cell ${getColorClass(item.ROUGELScore)}">
+                        ${(item.ROUGELScore || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.ROUGELScore, baselineItem.ROUGELScore) : ''}
+                    </td>
+                    <td class="score-cell ${getColorClass(item.Words_Precision)}">
+                        ${(item.Words_Precision || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.Words_Precision, baselineItem.Words_Precision) : ''}
+                    </td>
+                    <td class="score-cell ${getColorClass(item.Words_Recall)}">
+                        ${(item.Words_Recall || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.Words_Recall, baselineItem.Words_Recall) : ''}
+                    </td>
+                    <td class="score-cell ${getColorClass(item.Sentences_Precision)}">
+                        ${(item.Sentences_Precision || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.Sentences_Precision, baselineItem.Sentences_Precision) : ''}
+                    </td>
+                    <td class="score-cell ${getColorClass(item.Sentences_Recall)}">
+                        ${(item.Sentences_Recall || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.Sentences_Recall, baselineItem.Sentences_Recall) : ''}
+                    </td>
+                    <td class="score-cell ${getColorClass(item.completeness)}">
+                        ${(item.completeness || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.completeness, baselineItem.completeness) : ''}
+                    </td>
+                    <td class="score-cell ${getInverseColorClass(item.hallucination)}">
+                        ${(item.hallucination || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.hallucination, baselineItem.hallucination) : ''}
+                    </td>
+                    <td class="score-cell ${getInverseColorClass(item.irrelevance)}">
+                        ${(item.irrelevance || 0).toFixed(3)}
+                        ${baselineItem ? getDiffHtml(item.irrelevance, baselineItem.irrelevance) : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                const detailsRow = document.createElement('tr');
+                detailsRow.className = 'details-row';
+                detailsRow.id = `details-${index}`;
+
+                // Format References
+                let referencesHtml = '';
+                if (item.prediction?.references && item.prediction.references.length > 0) {
+                    referencesHtml = '<ul class="references-list">' +
+                        item.prediction.references.map(ref => `<li>${ref}</li>`).join('') +
+                        '</ul>';
+                } else {
+                    referencesHtml = '<p class="detail-text">No references found.</p>';
+                }
+
+                // Format Ground Truth Keypoints
+                let keypointsHtml = '';
+                if (item.ground_truth?.keypoints && item.ground_truth.keypoints.length > 0) {
+                    keypointsHtml = '<ul class="references-list">' +
+                        item.ground_truth.keypoints.map(kp => `<li>${kp}</li>`).join('') +
+                        '</ul>';
+                } else {
+                    keypointsHtml = '<p class="detail-text">No keypoints found.</p>';
+                }
+
+                // Format Responses (Keypoint Analysis)
+                let responsesHtml = '';
+                if (item.responses) {
+                    try {
+                        const responsesObj = typeof item.responses === 'string' ? JSON.parse(item.responses) : item.responses;
+                        responsesHtml = `
+                            <div class="detail-text">
+                                <div><strong>Complete IDs:</strong> ${responsesObj.complete_ids?.join(', ') || 'None'}</div>
+                                <div><strong>Irrelevant IDs:</strong> ${responsesObj.irrelevant_ids?.join(', ') || 'None'}</div>
+                                <div><strong>Hallucinate IDs:</strong> ${responsesObj.hallucinate_ids?.join(', ') || 'None'}</div>
+                            </div>
+                        `;
+                    } catch (e) {
+                        responsesHtml = `<div class="detail-text">${item.responses}</div>`;
+                    }
+                } else {
+                    responsesHtml = '<p class="detail-text">No response analysis available.</p>';
+                }
+
+
+                detailsRow.innerHTML = `
+                    <td colspan="10">
+                        <div class="details-content">
+                            <div class="detail-section">
+                                <div class="detail-title">Full Query</div>
+                                <div class="detail-text">${queryText}</div>
+                            </div>
+                            <div class="detail-section">
+                                <div class="detail-title">Prediction Content</div>
+                                <div class="detail-text">${item.prediction?.content || 'N/A'}</div>
+                            </div>
+                            <div class="detail-section">
+                                <div class="detail-title">Ground Truth Content</div>
+                                <div class="detail-text">${item.ground_truth?.content || 'N/A'}</div>
+                            </div>
+                            <div class="detail-section">
+                                <div class="detail-title">Prediction References</div>
+                                ${referencesHtml}
+                            </div>
+                             <div class="detail-section">
+                                <div class="detail-title">Ground Truth Keypoints</div>
+                                ${keypointsHtml}
+                            </div>
+                             <div class="detail-section">
+                                <div class="detail-title">Keypoint Analysis (Responses)</div>
+                                ${responsesHtml}
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(detailsRow);
+            });
+        }
+
+        function toggleDetails(index) {
+            const row = document.getElementById(`details-${index}`);
+            const btn = document.querySelector(`tr:nth-child(${index * 2 + 1}) .expand-btn`);
+            if (row.style.display === 'table-row') {
+                row.style.display = 'none';
+                btn.textContent = '▶';
+            } else {
+                row.style.display = 'table-row';
+                btn.textContent = '▼';
+            }
+        }
+
+        let sortDirection = 1;
+        function sortTable(key) {
+            sortDirection *= -1;
+            currentData.sort((a, b) => {
+                let valA = key === 'query_id' ? (a.query?.query_id ?? 0) : (a[key] || 0);
+                let valB = key === 'query_id' ? (b.query?.query_id ?? 0) : (b[key] || 0);
+
+                if (valA < valB) return -1 * sortDirection;
+                if (valA > valB) return 1 * sortDirection;
+                return 0;
+            });
+            renderTable();
+        }
+    </script>
+</body>
+
+</html>
