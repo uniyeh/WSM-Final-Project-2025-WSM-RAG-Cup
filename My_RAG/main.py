@@ -31,7 +31,8 @@ def main(query_path, docs_path, language, output_path):
         # 2. Retrieve relevant chunks(use BM25)
         row_chunks = get_chunks_from_db(prediction, doc_id, language)
         retriever = create_retriever(row_chunks, language)
-        retrieved_chunks = retriever.retrieve(query_text, top_k=5)
+        # retrieved_chunks = retriever.retrieve(query_text)
+        retrieved_chunks = retriever.retrieve_dynamic_k(query_text)
 
         # 3. Generate Answer
         print("Generating answer...")

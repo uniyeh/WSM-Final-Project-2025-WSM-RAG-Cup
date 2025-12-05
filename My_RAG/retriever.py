@@ -1,6 +1,7 @@
 from rank_bm25 import BM25Okapi
 import jieba
 from nltk.stem import PorterStemmer
+import numpy as np
 
 class BM25Retriever:
     def __init__(self, chunks, language="en"):
@@ -21,15 +22,51 @@ class BM25Retriever:
         
         self.bm25 = BM25Okapi(self.tokenized_corpus)
 
-    def retrieve(self, query, top_k=5):
+    def tokenize_query(self, query):
         if self.language == "zh":
-            tokenized_query = list(jieba.cut(query))
+            return list(jieba.cut(query))
         else:
             tokens = query.lower().split()
-            tokenized_query = [self.stemmer.stem(token) for token in tokens]
+            return [self.stemmer.stem(token) for token in tokens]
 
-        top_chunks = self.bm25.get_top_n(tokenized_query, self.chunks, n=top_k)
-        return top_chunks
+    def retrieve_dynamic_k(self, query, dominance_ratio=1.5, score_percentile=35):
+        tokenized_query = self.tokenize_query(query)
+        
+        doc_scores = self.bm25.get_scores(tokenized_query)
+        scored_chunks = []
+        for score, chunk in zip(doc_scores, self.chunks):
+            # Print score for observation
+            # print(f"Chunk Score: {score:.4f} | Content Snippet: '{chunk['page_content'][:30]}...'")
+            if score > 0.0:
+                chunk_with_score = chunk.copy()
+                chunk_with_score['bm25_score'] = score
+                scored_chunks.append(chunk_with_score)
+        
+        if not scored_chunks:
+            return []
+            
+        scored_chunks.sort(key=lambda x: x['bm25_score'], reverse=True)
+        
+        scores = np.array([chunk['bm25_score'] for chunk in scored_chunks])
+        max_score = scores[0]
+        
+        if len(scores) > 1:
+            second_max_score = scores[1]
+            
+            if max_score >= second_max_score * dominance_ratio:
+                print(f"\n Detected dominant high score ({max_score:.4f}). Ratio to second max ({second_max_score:.4f}) is {max_score/second_max_score:.2f} (>{dominance_ratio}).")
+                print("Returning only the highest scored chunk")
+                return [scored_chunks[0]]
+        
+        threshold = np.percentile(scores, score_percentile)
+        
+        print(f"\nNo dominant score detected. Using the {score_percentile}th percentile of scores as threshold.")
+        print(f"Dynamic Threshold ({score_percentile}th percentile): {threshold:.4f}")
+        print("Returning chunks with score >= dynamic threshold")
+        
+        dynamic_top_chunks = [chunk for chunk in scored_chunks if chunk['bm25_score'] >= threshold]
+        
+        return dynamic_top_chunks
 
 def create_retriever(chunks, language):
     """Creates a BM25 retriever from document chunks."""
@@ -62,4 +99,6 @@ def get_chunks_from_db(prediction, doc_id, language):
     chunks = []
     for row in rows:
         chunks.append({"page_content": row[1]})
+    
+    conn.close()
     return chunks
