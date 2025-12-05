@@ -23,3 +23,32 @@ class BM25Retriever:
 def create_retriever(chunks, language):
     """Creates a BM25 retriever from document chunks."""
     return BM25Retriever(chunks, language)
+
+import sqlite3
+import os
+DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../db/dataset.db'))
+
+def get_chunks_from_db(prediction, doc_id, language):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    if (doc_id):
+        placeholders = ','.join('?' for _ in doc_id)
+        cursor.execute(f"SELECT id, content FROM chunks WHERE doc_id IN ({placeholders})", doc_id)
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+    elif (prediction):
+        placeholders = ','.join('?' for _ in prediction)
+        cursor.execute(f"SELECT id, content FROM chunks WHERE domain IN ({placeholders})", prediction)
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+    else:
+        cursor.execute("SELECT id, content FROM chunks where language = ?", (language,))
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+    chunks = []
+    for row in rows:
+        chunks.append({"page_content": row[1]})
+    return chunks

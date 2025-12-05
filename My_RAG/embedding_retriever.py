@@ -42,7 +42,7 @@ def get_chunks_rows(language="en", doc_ids=None, domain=None):
 def embedding_retriever(query, language="en", doc_ids=None, domain=None, top_k=5, threshold=0.8):
     """
     Retrieve chunks using embedding similarity.
-    If doc_ids is provided, filter chunks by these documents first.
+    If doc_ids is provided, filter chunks by these chunks first.
     threshold: float, optional. If provided, only return chunks with L2 distance <= threshold.
                Note: Since we use L2 distance, lower is better. 'Score too low' corresponds to 'Distance too high'.
     """

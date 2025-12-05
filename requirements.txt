@@ -6,3 +6,4 @@ PyYAML==6.0.3
 rank_bm25==0.2.2
 tqdm==4.67.1
 faiss-cpu==1.13.0
+nltk
