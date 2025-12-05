@@ -9,6 +9,12 @@ DB_PATH = 'db/dataset.db'
 DATASET_PATH = 'dragonball_dataset/dragonball_docs.jsonl'
 SPECIAL_DATASET_PATH = 'db/special_dataset.jsonl'
 
+def create_tables():
+    conn = Connection(DB_PATH)
+    conn.execute("DROP TABLE IF EXISTS documents")
+    conn.execute("DROP TABLE IF EXISTS chunks")
+    create_table_from_yaml(SCHEMA_PATH, DB_PATH)
+
 def main(docs_path):
     create_tables()
     populate_documents(docs_path)
@@ -90,7 +96,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if (args.regen):
         main(args.docs_path)
-    elif(arg.regenChunk):
-        main()
     else:
         print("No action taken.")
