@@ -6,9 +6,14 @@ from generator import generate_answer
 import argparse
 from router import router
 from embedding_retriever import embedding_retriever
+from router_utils import cache_document_names
 from rank_bm25 import BM25Okapi
 
 def main(query_path, docs_path, language, output_path):
+    # 0. Cache document names at startup (for LLM-based routing)
+    print("Caching document names from database...")
+    cache_document_names(language)
+    
     # 1. Load Queries
     queries = load_jsonl(query_path)
 

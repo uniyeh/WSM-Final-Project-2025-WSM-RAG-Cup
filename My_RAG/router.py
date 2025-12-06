@@ -33,16 +33,46 @@ def router(query, language="en"):
     return None, []
 
 def name_router(query, language="en"):
+    """
+    Use LLM to intelligently match query to document names.
+    Falls back to simple string matching if LLM fails.
+    """
+    from subject_matcher import find_doc_names
+    from router_utils import cache_document_names
+    
+    content = query['query']['content']
+    
+    # Try LLM-based matching first
+    try:
+        matched_names = find_doc_names(content, language=language, top_k=3)
+        
+        if matched_names:
+            # Get the document cache to look up doc_ids and domain
+            doc_cache = cache_document_names(language)
+            
+            prediction = None
+            doc_id = []
+            
+            for name in matched_names:
+                if name in doc_cache:
+                    doc_id.extend(doc_cache[name]['doc_ids'])
+                    # Use the domain of the first matched document
+                    if prediction is None:
+                        prediction = doc_cache[name]['domain']
+            
+            if doc_id:
+                print(f"✓ LLM name_router matched: {matched_names}")
+                return prediction, doc_id
+    except Exception as e:
+        print(f"LLM name_router failed: {e}, falling back to string matching")
+    
+    # Fallback: Original string matching logic
     conn = Connection(DB_PATH)
     rows = conn.execute("SELECT domain, name, doc_id FROM documents WHERE language = ?", (language,))
-    domain_docs = {}
     name_docs = {}
     for row in rows:
         domain = row[0]
         name = row[1]
-        if domain not in domain_docs:
-            domain_docs[domain] = []
-        domain_docs[domain].append(name)
         if name not in name_docs:
             name_docs[name] = {
                 'doc_id': [],
@@ -52,7 +82,6 @@ def name_router(query, language="en"):
 
     prediction = None
     doc_id = []
-    content = query['query']['content']
     for name in name_docs:
         if (name_docs[name]['domain'] == 'Law'):
             match = False

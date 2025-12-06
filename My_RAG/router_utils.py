@@ -2,12 +2,74 @@ import re
 import os
 import sys
 from ollama import Client
+from typing import Dict
 # Add parent directory to path to import Connection
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../db')))
 from Connection import Connection
 from utils import load_ollama_config
 
 DB_PATH = "db/dataset.db"
+
+# Global cache for document names (shared across routing modules)
+_DOCUMENT_CACHE = None
+
+
+def cache_document_names(language: str = None) -> Dict[str, Dict]:
+    """
+    Cache all document names from the database.
+    This is a shared resource used by both router and subject_matcher.
+    
+    Args:
+        language: Optional language filter ('en' or 'zh')
+        
+    Returns:
+        Dictionary mapping document names to their metadata
+        {
+            "document_name": {
+                "doc_ids": [1, 2, 3],
+                "domain": "Finance",
+                "language": "en"
+            }
+        }
+    """
+    global _DOCUMENT_CACHE
+    
+    # Return cached data if available
+    if _DOCUMENT_CACHE is not None:
+        if language:
+            return {k: v for k, v in _DOCUMENT_CACHE.items() if v['language'] == language}
+        return _DOCUMENT_CACHE
+    
+    conn = Connection(DB_PATH)
+    
+    if language:
+        cursor = conn.execute("SELECT doc_id, domain, language, name FROM documents WHERE language = ?", (language,))
+    else:
+        cursor = conn.execute("SELECT doc_id, domain, language, name FROM documents")
+    
+    rows = cursor.fetchall()
+    
+    document_cache = {}
+    for row in rows:
+        doc_id = row[0]
+        domain = row[1]
+        lang = row[2]
+        name = row[3]
+        
+        if name not in document_cache:
+            document_cache[name] = {
+                'doc_ids': [],
+                'domain': domain,
+                'language': lang
+            }
+        document_cache[name]['doc_ids'].append(doc_id)
+    
+    _DOCUMENT_CACHE = document_cache
+    print(f"Cached {len(document_cache)} unique document names from database")
+    
+    if language:
+        return {k: v for k, v in document_cache.items() if v['language'] == language}
+    return document_cache
 
 def specific_router(query):
     content = query['query']['content']
