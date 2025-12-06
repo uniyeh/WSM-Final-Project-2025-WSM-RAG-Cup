@@ -11,10 +11,8 @@ def split_sentences(text, language):
         try:
             return sent_tokenize(text)
         except LookupError:
-            import nltk
-            nltk.download('punkt')
-            nltk.download('punkt_tab')
-            return sent_tokenize(text)
+            # Split on . ! ? followed by whitespace or end of string
+            return re.split(r'(?<=[.!?])\s+', text)
 
 def chunk_row_chunks(docs, language):
     chunks = []
