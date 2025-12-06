@@ -1,4 +1,4 @@
-import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
 import re
 
 def split_sentences(text, language):
@@ -9,11 +9,12 @@ def split_sentences(text, language):
         # Use NLTK for English
         # no need to remove these Ltd. Inc. etc.
         try:
-            return nltk.sent_tokenize(text)
+            return sent_tokenize(text)
         except LookupError:
+            import nltk
             nltk.download('punkt')
             nltk.download('punkt_tab')
-            return nltk.sent_tokenize(text)
+            return sent_tokenize(text)
 
 def chunk_row_chunks(docs, language):
     chunks = []
