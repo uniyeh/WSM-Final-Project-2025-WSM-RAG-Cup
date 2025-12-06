@@ -25,15 +25,15 @@ def generate_answer(query, context_chunks, language="en"):
     client = Client(host=ollama_config["host"])
     response = client.generate(model=ollama_config["model"], options={
         #  "num_ctx": 8192, # [4096, 8192, 32768]
-         "temperature": 0.1, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
-        #  "top_p": 0.9,
-        #  "top_k": 40,
-        #  "max_tokens": 2048,
-        #  "frequency_penalty": 0.0,
-        #  "presence_penalty": 0.0,
-        #  "stop": ["\n\n"],
+         "temperature": 0.3, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
+         "top_p": 0.9,
+         "top_k": 40,
+         "max_tokens": 2048,
+         "frequency_penalty": 0.0,
+         "presence_penalty": 0.0,
+         "stop": ["\n\n"],
     }, prompt=prompt)
-    print("DEBUG: Full Ollama Response:", response)
+    # print("DEBUG: Full Ollama Response:", response)
     return response["response"]
 
 
