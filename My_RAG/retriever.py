@@ -34,7 +34,7 @@ class BM25Retriever:
         string = re.sub(r"\s+", " ", string)
         return string.strip()
 
-    def retrieve(self, query, top_k=5, top1_check=False):
+    def retrieve(self, query, top_k=5, top1_check=False, threshold=0):
         if self.language == "zh":
             tokenized_query = list(jieba.cut(query))
         else:
@@ -53,7 +53,7 @@ class BM25Retriever:
                     break
         else:
             for i in range(len(scores)):
-                if scores[i] <= 0:
+                if scores[i] <= threshold:
                     new_top_k = i
                     break
         
@@ -77,21 +77,21 @@ def get_chunks_from_db(prediction, doc_id, language):
     cursor = conn.cursor()
     if (prediction and doc_id):
         placeholders = ','.join('?' for _ in doc_id)
-        cursor.execute(f"SELECT id, content FROM chunks WHERE doc_id IN ({placeholders})", doc_id)
+        cursor.execute(f"SELECT id, name, content FROM chunks WHERE doc_id IN ({placeholders})", doc_id)
         rows = cursor.fetchall()
         if not rows:
             return []
     elif (prediction):
-        cursor.execute(f"SELECT id, content FROM chunks WHERE domain = ? and language = ?", (prediction, language))
+        cursor.execute(f"SELECT id, name, content FROM chunks WHERE domain = ? and language = ?", (prediction, language))
         rows = cursor.fetchall()
         if not rows:
             return []
     else:
-        cursor.execute("SELECT id, content FROM chunks where language = ?", (language,))
+        cursor.execute("SELECT id, name, content FROM chunks where language = ?", (language,))
         rows = cursor.fetchall()
         if not rows:
             return []
     chunks = []
     for row in rows:
-        chunks.append({"page_content": row[1]})
+        chunks.append({"page_content": row[2], "name": row[1]})
     return chunks
