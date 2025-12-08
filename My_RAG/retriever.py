@@ -58,10 +58,10 @@ class BM25Retriever:
                     break
         
         top_chunks = self.bm25.get_top_n(tokenized_query, self.chunks, n=new_top_k)
-        if top1_check and new_top_k > 1:
-            print("scores: {}".format(scores))
-            print("top_k: {}".format(new_top_k))
-            print("threshold: {}".format(scores[new_top_k if new_top_k < len(scores) else len(scores) - 1]))
+        # if top1_check and new_top_k > 1:
+        #     print("scores: {}".format(scores))
+        #     print("top_k: {}".format(new_top_k))
+        #     print("threshold: {}".format(scores[new_top_k if new_top_k < len(scores) else len(scores) - 1]))
         return top_chunks
 
 def create_retriever(chunks, language):
@@ -92,17 +92,6 @@ def get_chunks_from_db(prediction, doc_id, language):
         if not rows:
             return []
     chunks = []
-    rows = [list(row) for row in rows]
-    for index, row in enumerate(rows):
-        if language == "zh":
-            if (len(row[2]) < 30 and index < len(rows) - 1):
-                # together with the next chunk
-                rows[index+1][2] = row[2] + rows[index+1][2]
-                continue
-        else:
-            if (len(row[2]) < 70 and index < len(rows) - 1):
-                # together with the next chunk
-                rows[index+1][2] = row[2] + rows[index+1][2]
-                continue
+    for row in rows:
         chunks.append({"page_content": row[2], "name": row[1]})
     return chunks
