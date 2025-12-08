@@ -24,9 +24,11 @@ def main(docs_path):
 def insert_query(doc):
     conn = Connection(DB_PATH)
     query = doc['query']
+    ground_truth = doc['ground_truth']
+    references = "\n".join(ground_truth['references']) if ground_truth['references'] else ""
     conn.execute(
-        "INSERT INTO queries (query_id, domain, language, content, jsonl) VALUES (?, ?, ?, ?, ?)",
-        (query['query_id'], doc['domain'], doc['language'], query['content'], json.dumps(doc))
+        "INSERT INTO queries (query_id, domain, query_type, language, query, answer, doc_count, refs, jsonl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (query['query_id'], doc['domain'], query['query_type'], doc['language'], query['content'], ground_truth['content'], len(ground_truth['doc_ids']), references, json.dumps(doc))
     )
 
 def populate_queries(file_path):

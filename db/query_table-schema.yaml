@@ -6,13 +6,25 @@
   - name: query_id
     type: INTEGER
     constraints: NOT NULL
+  - name: query_type
+    type: TEXT
+    constraints: NOT NULL
   - name: domain
     type: TEXT
     constraints: NOT NULL
   - name: language
     type: TEXT
     constraints: NOT NULL
-  - name: content
+  - name: query
+    type: TEXT
+    constraints: NOT NULL
+  - name: answer
+    type: TEXT
+    constraints: NOT NULL
+  - name: doc_count
+    type: INTEGER
+    constraints: NOT NULL
+  - name: refs
     type: TEXT
     constraints: NOT NULL
   - name: jsonl

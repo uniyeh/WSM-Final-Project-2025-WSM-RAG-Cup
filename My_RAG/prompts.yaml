@@ -1,19 +1,43 @@
 en: |
-  You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question.
-  If the answer consists of multiple fragments, please merge all fragments into a single answer.
-  If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information. Do not use full sentences. Do not repeat the question or the context.
-  If you don't know the answer, just answer: "Unable to answer."
+  ### Instruction
+  You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
 
-  Question: {query} 
-  Context: {context} 
-  Answer:
+  ### Steps
+  1. Analyze the Question to understand what specific information is needed.
+  2. Scan the Reference Data to find the exact match.
+  3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information with the SAME format as the reference data. Do not use full sentences. Do not repeat the question or the context.
+  4. Use "." to end the answer.
+
+  **If the answer is not founded or you don't know the answer, state "Unable to answer." no need to explain.**
+
+  ### Question
+  {query}
+
+  ### Reference Data
+  <data>
+  {context}
+  </data>
+
+  ### Answer
 
 zh: |
-  你是一个问答任务的助手。使用以下检索到的上下文片段来回答问题。
-  如果答案为多个片段者，请将所有片段合并成一个答案。
-  若答案单一且为具体信息（例如：姓名、日期、金额、地点、项目、事件）者，仅回答请求的具体信息，不要使用完整的句子，不要重复问题或上下文。
-  如果不知道答案，只需回答：“无法回答”。
+  ### Instruction
+  You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
 
-  问题: {query}
-  上下文: {context}
-  回答:
+  ### Steps
+  1. Analyze the Question to understand what specific information is needed.
+  2. Scan the Reference Data to find the exact match.
+  3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information same **units and formatting** as the reference data. Do not use full sentences. Do not repeat the question or the context.
+
+  **If the answer is not founded or you don't know the answer, state "无法回答". no need to explain.**
+
+  ### Question
+  {query}
+
+  ### Reference Data
+  <data>
+  {context}
+  </data>
+
+  ### Answer
+

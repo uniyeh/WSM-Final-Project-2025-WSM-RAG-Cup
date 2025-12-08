@@ -92,6 +92,17 @@ def get_chunks_from_db(prediction, doc_id, language):
         if not rows:
             return []
     chunks = []
-    for row in rows:
+    rows = [list(row) for row in rows]
+    for index, row in enumerate(rows):
+        if language == "zh":
+            if (len(row[2]) < 30 and index < len(rows) - 1):
+                # together with the next chunk
+                rows[index+1][2] = row[2] + rows[index+1][2]
+                continue
+        else:
+            if (len(row[2]) < 70 and index < len(rows) - 1):
+                # together with the next chunk
+                rows[index+1][2] = row[2] + rows[index+1][2]
+                continue
         chunks.append({"page_content": row[2], "name": row[1]})
     return chunks
