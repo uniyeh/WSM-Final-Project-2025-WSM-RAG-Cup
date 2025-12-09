@@ -23,7 +23,7 @@ You are a query breakdown assistant. Your task is to generate a sub-question for
 You must output a valid JSON list of objects.
 Do not include markdown formatting (like ```json). Just the raw JSON.
 
-Each object must have exactly two keys: "doc_name" and "sub_question".
+Each object must have exactly two keys: "doc_name" and "sub_question", "doc_name" should be from doc_names.
 doc_names: {doc_names}
 User Query: {query}
 """

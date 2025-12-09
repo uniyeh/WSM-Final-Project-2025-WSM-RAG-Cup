@@ -95,15 +95,21 @@ def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_n
         doc_name = sub_query_item[0]
         sub_query = sub_query_item[1]
         print("sub_query: ", sub_query)
+
+        single_doc_id = []
         for index, name in enumerate(doc_names):
             if name == doc_name:
-                doc_id = doc_ids[index]
+                single_doc_id.append(doc_ids[index])
         modified_query_text = get_remove_names_from_text(sub_query, doc_names)
+
+        #fallback to all documents if no document is found
+        if (not single_doc_id):
+            single_doc_id = doc_ids
 
         # 1. Retrieve bigger chunks(use BM25)
         print("[1] retrieve with bigger chunks:")
         retrieved_chunks = []
-        retrieved_chunks.extend(retrieve_bigger_chunks(sub_query, language, prediction, [doc_id], doc_names))
+        retrieved_chunks.extend(retrieve_bigger_chunks(sub_query, language, prediction, single_doc_id, doc_names))
 
         # 2. Retrieve smaller chunks(use BM25)
         print("[2] retrieve with smaller chunks and extract document name:")
@@ -142,25 +148,15 @@ def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_n
     if ("无法回答" in answer or 'Unable to answer' in answer):
         return answer, combined_chunks
     
-    return answer, combined_chunks
-    # #4. Fine-tune retriever
-    # retrieve_answer = get_remove_names_from_text(answer, doc_names)
-    # # create retriever
-    # remove_name_return_chunks = []
-    # if (not combined_chunks):
-    #     return answer, combined_chunks
-    # for index, chunk in enumerate(combined_chunks):
-    #     remove_name_return_chunks.append({
-    #         "page_content": get_remove_names_from_text(chunk['page_content'], doc_names),
-    #         "chunk_index": index
-    #     })
-    # retriever_final = create_retriever(remove_name_return_chunks, language)
-    # retrieved_final_chunks = retriever_final.retrieve(retrieve_answer, top1_check=True) # retrieve for higher than the top 1 score * 0.5
-    # final_return_chunks = []
-    # for index, chunk in enumerate(retrieved_final_chunks):
-    #     final_return_chunks.append(combined_chunks[chunk['chunk_index']])
-
-    # return answer, final_return_chunks
+    if (not combined_chunks):
+        return answer, combined_chunks
+    if (language == 'zh'):
+        return answer, combined_chunks
+    #4. Fine-tune retriever
+    retriever_final = create_retriever(combined_chunks, language)
+    final_chunks = retriever_final.retrieve(answer, top1_check=True) # retrieve for higher than the top 1 score * 0.5
+    print('final return chunks:', len(final_chunks))
+    return answer, final_chunks
 
 ########## Helper Functions ##########
 
