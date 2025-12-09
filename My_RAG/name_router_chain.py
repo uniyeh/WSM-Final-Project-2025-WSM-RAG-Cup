@@ -17,9 +17,8 @@ def name_router_chain(query, language="en", prediction=None, doc_ids=[], doc_nam
         return breakdown_path(query_text, language, prediction, doc_ids, doc_names)
 
 def single_path(query_text, language="en", prediction=None, doc_id=[], doc_names=[]):
+    print("[Single Path] query_text: ", query_text)
     modified_query_text = get_remove_names_from_text(query_text, doc_names)
-    print("query_text: ", query_text)
-    print("modified_query_text: ", modified_query_text)
 
     # 1. Retrieve bigger chunks(use BM25)
     print("[1] retrieve with bigger chunks:")
@@ -85,9 +84,13 @@ def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_n
             queries.append([item['doc_name'], item['sub_question']])
 
     except json.JSONDecodeError:
-        print("The LLM output was not valid JSON.")
+        print("[Breakdown Path] The LLM output was not valid JSON.")
         return single_path(query_text, language, prediction, doc_ids, doc_names)
-    
+
+    if (len(queries) < 2):
+        return single_path(query_text, language, prediction, doc_ids, doc_names)
+
+    print("[Breakdown Path] queries: ")
     for sub_query_item in queries:
         doc_name = sub_query_item[0]
         sub_query = sub_query_item[1]
@@ -128,7 +131,6 @@ def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_n
 
         combined_chunks.extend(return_chunks)
         combined_answers.append(answer)
-    print("result: ", result)
 
     # 3. Generate Final Answer
     print("[4] generate final answer:")
@@ -140,18 +142,25 @@ def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_n
     if ("无法回答" in answer or 'Unable to answer' in answer):
         return answer, combined_chunks
     
-    #4. Fine-tune retriever
-    retrieve_answer = get_remove_names_from_text(answer, doc_names)
-    # modified_query_text is not defined here, using query_text (defined at start of function)
-    modified_query_text = get_remove_names_from_text(query_text, doc_names)
-    final_retrieve = modified_query_text + " " + retrieve_answer
-    retrieved_small_chunks = retriever_2.retrieve(final_retrieve, top1_check=True) # retrieve for higher than the top 1 score * 0.5
-    
-    return_chunks = []
-    for index, chunk in enumerate(retrieved_small_chunks):
-        return_chunks.append(small_chunks[chunk['chunk_index']])
-    print('final chunks: ', len(return_chunks))
     return answer, combined_chunks
+    # #4. Fine-tune retriever
+    # retrieve_answer = get_remove_names_from_text(answer, doc_names)
+    # # create retriever
+    # remove_name_return_chunks = []
+    # if (not combined_chunks):
+    #     return answer, combined_chunks
+    # for index, chunk in enumerate(combined_chunks):
+    #     remove_name_return_chunks.append({
+    #         "page_content": get_remove_names_from_text(chunk['page_content'], doc_names),
+    #         "chunk_index": index
+    #     })
+    # retriever_final = create_retriever(remove_name_return_chunks, language)
+    # retrieved_final_chunks = retriever_final.retrieve(retrieve_answer, top1_check=True) # retrieve for higher than the top 1 score * 0.5
+    # final_return_chunks = []
+    # for index, chunk in enumerate(retrieved_final_chunks):
+    #     final_return_chunks.append(combined_chunks[chunk['chunk_index']])
+
+    # return answer, final_return_chunks
 
 ########## Helper Functions ##########
 
