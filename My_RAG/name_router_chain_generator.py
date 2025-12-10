@@ -36,31 +36,42 @@ Query: "List all events for Company A and Company B." -> COMPLEX
     else:
         prompt = """
 ### Role
-You are a Query Classifier.
+You are a Query Intent Classifier.
 
 ### Task
-Analyze the user's query and classify it into one of two categories:
-1. "SIMPLE": A direct factual question looking for a single specific attribute, definition, or fact about a single entity.
-    - If there are keywords like "什么", "多少", "谁", "哪里", "何时", "什么方式" in the query, it is "SIMPLE".
-2. "COMPLEX": A question that requires comparing two or more entities, aggregating data (counting, summing), or reasoning across multiple timeframes (multi-hop).
-    - If there are keywords like "如何", "所有的", "为什么", "怎么样", "共有几次" in the query, it is "COMPLEX".
+Analyze the "User Query" and predict the complexity of the answer required.
+Classify the query into one of two categories: **SIMPLE** or **COMPLEX**.
 
+### Classification Rules
+
+**1. SIMPLE (Direct Lookup)**
+* **Definition:** The answer is explicitly written in the text as a single attribute. You do not need to calculate anything.
+* **Includes:** Names, Dates, Locations, Prices, ID numbers, or a pre-calculated total (e.g., "What is the Total Revenue?").
+* **Keywords:** "When", "Who", "What is the ID", "What amount".
+
+**2. COMPLEX (Calculation & Aggregation)**
+* **Definition:** The answer requires **Counting** items, **Summing** values, or **Listing** multiple things. If the model has to count "1, 2, 3..." to get the answer, it is COMPLEX.
+* **Includes:** Counting frequency, Listing items, Comparing A vs B, Explaining "How".
+* **Keywords:** "How many items" (几项), "Count" (统计), "List all" (列出), "Difference" (区别), "How" (如何).
+
+### Critical Distinction: "Numbers"
+* "What is the price?" -> **SIMPLE** (The number exists in the text).
+* "How many products were sold?" -> **COMPLEX** (You must count the rows/items).
+
+### Examples for Training
+* "What is the CEO's name?" -> **SIMPLE** (Lookup Name)
+* "What is the total cost listed on the invoice?" -> **SIMPLE** (Lookup pre-existing number)
+* "How many times did the CEO visit the factory?" -> **COMPLEX** (Counting required)
+* "List all board members." -> **COMPLEX** (Listing required)
+* "进行了几项？" -> **COMPLEX** (Requires counting the exam items)
+* "进行了几个？" -> **COMPLEX** (Requires counting the exam items)
+
+### Input Data
+User Query: {query}
 ### Output
-Return ONLY the category name: "SIMPLE" or "COMPLEX".
-
-### Examples
-Query: "绿源环保有限公司未来环境保护计划的投资额是多少？" -> SIMPLE
-Query: "ACME公司如何通过债务重组和重大股权收购来提升市场竞争力的？" -> COMPLEX
-Query: "文化传媒有限公司在2019年3月分发了多少股利？" -> SIMPLE
-Query: "施某一共有几次伪造货币的犯罪行为？" -> COMPLEX
-Query: "柳某某通过什么方式贩卖伪造货币？" -> SIMPLE
-Query: "公司是如何通过债务重组、成本控制和净利润增长来改善财务状况的？" -> COMPLEX
-Query: "百和文化集团2017年7月建设了什么防止污染设施？" -> SIMPLE
-
-
-### User Query
-{query}
-    """ 
+Reasoning: [One sentence explaining why]
+Label: [SIMPLE or COMPLEX]
+    """
     prompt = prompt.format(query=query)
     print("query_classifier: ", prompt)
     ollama_config = load_ollama_config()

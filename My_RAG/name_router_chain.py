@@ -15,11 +15,10 @@ DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../db/dataset
 def name_router_chain(query, language="en", prediction=None, doc_ids=[], doc_names=[]):
     query_text = query['query']['content']
     if (len(doc_ids) == 1):
-        if(language == 'en'):
-            query_type = query_classifier(query_text, language)
-            if (query_type == "COMPLEX"):
-                print("[Single Path-COMPLEX] query_text: ", query_text)
-                return single_complex_path(query_text, language, prediction, doc_ids, doc_names)
+        query_type = query_classifier(query_text, language)
+        if ("COMPLEX" in query_type):
+            print("[Single Path-COMPLEX] query_text: ", query_text)
+            return single_complex_path(query_text, language, prediction, doc_ids, doc_names)
         return single_path(query_text, language, prediction, doc_ids, doc_names)
     else:
         return breakdown_path(query_text, language, prediction, doc_ids, doc_names)
