@@ -5,6 +5,7 @@ import os
 import sys
 from name_router_chain import name_router_chain
 from default_chain import default_chain
+from llm_router_chain import llm_router_chain
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../db')))
 from Connection import Connection
@@ -32,8 +33,8 @@ def router(query, language="en"):
         return name_router_chain(query, language, prediction, doc_id, matched_name)
     
     ## Step 3. LLM chain (TODO)
-    # print("[Router][3] LLM chain")
-    # return LLM_router_chain(query, language)
+    print("[Router][3] LLM chain")
+    return llm_router_chain(query, language)
 
     ## Step 4. fallback to old default chain
     print("[Router][4] fallback to old default chain")
