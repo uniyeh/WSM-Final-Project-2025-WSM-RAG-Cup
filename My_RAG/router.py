@@ -28,8 +28,8 @@ def router(query, language="en"):
     #     return summary_router_chain(query, language, prediction, doc_id, matched_name)
     
     ## Step 2. name_router chain
-    print("[Router][2] name_router chain")
     if (prediction):
+        print("[Router][2] name_router chain")
         return name_router_chain(query, language, prediction, doc_id, matched_name)
     
     ## Step 3. LLM chain (TODO)
@@ -37,8 +37,8 @@ def router(query, language="en"):
     return llm_router_chain(query, language)
 
     ## Step 4. fallback to old default chain
-    print("[Router][4] fallback to old default chain")
-    return default_chain(query, language)
+    # print("[Router][4] fallback to old default chain")
+    # return default_chain(query, language)
 
 def name_matcher(query, language="en"):
     content = query['query']['content']

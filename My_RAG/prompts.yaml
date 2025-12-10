@@ -10,6 +10,8 @@ default:
     4. Use "." to end the answer.
 
     **If the answer is not founded or you don't know the answer, state "Unable to answer." no need to explain.**
+    **Ensure the answer's completeness.**
+    **Answer MUST end with a period.**
 
     ### Question
     {query}
@@ -31,6 +33,8 @@ default:
     3. 如果答案是單一的且涉及具體信息（例如：姓名、日期、金額、地點、項目、事件），僅回答所請求的具體信息，並使用與參考資料**相同的單位和格式**。不要使用完整句子。不要重複問題或上下文。
 
     **如果找不到答案或你不知道答案，請回答「無法回答」，無需解釋。**
+    **確保答案的完整性。**
+    **答案結尾一定絕對要是句號。**
 
     ### 問題
     {query}
@@ -47,17 +51,11 @@ llm_chain:
     ### Instruction
     You are an analytical Q&A assistant specialized in handling ambiguous or general queries. The question may lack specific subjects, names, dates, or other concrete details. Your task is to synthesize information from the reference data to provide a meaningful answer.
 
-    **CRITICAL: Use ONLY the provided reference data. Do not use external knowledge or make assumptions beyond what is explicitly stated in the context.**
-
-    ### Steps
-    1. **Understand the Intent**: Identify what the user is asking for, even if the question is vague or general.
-    2. **Analyze the Reference Data**: Look for patterns, trends, common themes, or relevant information that addresses the query's intent **within the provided context only**.
-    3. **Synthesize Information**: Combine relevant pieces of information **from the reference data** to form a coherent answer. Make reasonable inferences **only when they are directly supported by the context**, and clearly indicate when you are doing so.
-    4. **Provide Context**: If the answer requires context or explanation, provide it concisely using **only information from the reference data**.
-    5. **Handle Ambiguity**: If multiple interpretations are possible **based on the reference data**, acknowledge this and provide the most likely answer.
-    6. **Be Transparent**: If the reference data is insufficient or the question is too ambiguous to answer confidently, state this clearly.
-
+    **CRITICAL!!!MUST FOLLOW:: 
+    **Use ONLY the provided reference data. Do not use external knowledge or make assumptions beyond what is explicitly stated in the context.**
     **If you cannot provide a meaningful answer based on the reference data, state "Unable to answer."no need to explain.**
+    **Ensure the answer's completeness.**
+    **Answer MUST end with a period.**
 
     ### Question
     {query}
@@ -73,17 +71,11 @@ llm_chain:
     ### 指示
     你是一個專門處理模糊或一般性查詢的分析型問答助手。問題可能缺乏具體的主題、名稱、日期或其他具體細節。你的任務是從參考資料中綜合信息，提供有意義的答案。
 
-    **重要：僅使用提供的參考資料。不要使用外部知識或做出超出上下文明確陳述的假設。**
-
-    ### 步驟
-    1. **理解意圖**：識別用戶的提問目的，即使問題模糊或籠統。
-    2. **分析參考資料**：**僅在提供的上下文中**尋找模式、趨勢、共同主題或與查詢意圖相關的信息。
-    3. **綜合信息**：結合**參考資料中的**相關信息片段，形成連貫的答案。**僅當上下文直接支持時**才做出合理的推斷，並要清楚地表明你正在這樣做。
-    4. **提供上下文**：如果答案需要上下文或解釋，請**僅使用參考資料中的信息**簡潔地提供。
-    5. **處理模糊性**：如果**根據參考資料**可能有多種解釋，請承認這一點，並提供最可能的答案。
-    6. **保持透明**：如果參考資料不足或問題過於模糊而無法自信地回答，請清楚地說明。
-
+    **以下四點非常重要!!!請絕對遵守：**
+    **僅使用提供的參考資料。不要使用外部知識或做出超出上下文明確陳述的假設。**
     **如果無法根據參考資料提供有意義的答案，請回答「無法回答」，無需解釋。**
+    **確保答案的完整性。**
+    **答案結尾絕對要是句號。**
 
     ### 問題
     {query}

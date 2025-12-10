@@ -43,25 +43,38 @@ class BM25Retriever:
             tokenized_query = [self.stemmer.stem(token) for token in tokens]
 
         scores = self.bm25.get_scores(tokenized_query)
-        scores = scores.tolist()
-        scores.sort(reverse=True)
-        new_top_k = len(scores)
-        if top1_check:
-            for i in range(len(scores) - 1):
-                if scores[0]/2 > scores[i+1]:
-                    new_top_k = i+1
-                    break
-        else:
-            for i in range(len(scores)):
-                if scores[i] <= threshold:
-                    new_top_k = i
-                    break
         
-        top_chunks = self.bm25.get_top_n(tokenized_query, self.chunks, n=new_top_k)
-        # if top1_check and new_top_k > 1:
-        #     print("scores: {}".format(scores))
-        #     print("top_k: {}".format(new_top_k))
-        #     print("threshold: {}".format(scores[new_top_k if new_top_k < len(scores) else len(scores) - 1]))
+        # Get top_k indices sorted by score
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+        
+        # Debug: Show top scores
+        top_scores = [scores[i] for i in top_indices]
+        print(f"[BM25] Top {len(top_scores)} scores: {[f'{s:.2f}' for s in top_scores[:5]]}")
+        
+        # Filter by threshold (since sorted, can cut off when score drops below threshold)
+        if threshold > 0:
+            filtered_indices = []
+            for idx in top_indices:
+                if scores[idx] > threshold:
+                    filtered_indices.append(idx)
+                else:
+                    break  # Scores are sorted, so we can stop here
+            top_indices = filtered_indices
+        
+        # Apply top1_check if needed
+        if top1_check and len(top_indices) > 1:
+            top_score = scores[top_indices[0]]
+            # Keep only chunks with score > top_score/2
+            filtered = []
+            for idx in top_indices:
+                if scores[idx] > top_score/2:
+                    filtered.append(idx)
+                else:
+                    break
+            top_indices = filtered
+        
+        # Get the actual chunks
+        top_chunks = [self.chunks[i] for i in top_indices]
         return top_chunks
 
 def create_retriever(chunks, language):

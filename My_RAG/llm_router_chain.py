@@ -1,45 +1,62 @@
-from retriever import create_retriever
+from retriever import create_retriever, get_chunks_from_db
 from generator import generate_answer
+from ollama import Client
 
 def llm_router_chain(query, language):
+    query_text = query['query']['content']
+    
     # 1. Do the query expansion
-    new_query = expand_query(query, language, 3)
-    # new_query = expand_query_2(query, language, 3)
+    new_query = expand_query(query_text, language)
+    # new_query = expand_query_2(query_text, language, 3)
     print("new_query: ", new_query)
     # 2. Retrieve chunks
-    retrieved_chunks = retrieve_chunks(query, language)
-    # 3. Generate answerß
-    answer = generate_answer(query, retrieved_chunks, language)
+    retrieved_chunks = retrieve_chunks(new_query, language)
+    # 3. Generate answer
+    answer = generate_answer_llm(new_query, retrieved_chunks, language)
     # 4. Return answer and chunks
     return answer, retrieved_chunks
 
-def expand_query(query, language="en", size):
+def expand_query(query, language="en", size=3):
     if language == "zh":
         prompt = f"""你是一位專業的搜尋優化專家。
-        請為以下查詢的每個關鍵方面提供額外的資訊，使其更容易找到相關文檔（每個查詢約 {size} 個詞）：
-        {query}
+        請遵照以下步驟為目標查詢的每個關鍵方面提供{size}個額外的資訊，使其更容易找到相關文檔。
         
-        請將輸出整理成列表，每行一個，不要包含編號、前言或結尾。"""
+        **步驟:**
+        1. 提取目標查詢中的名詞，包含但不限於：年份、月份、地點、組織名、事件名、對象名。
+        2. 提取名詞後，將名詞轉換延伸出相關的簡潔名詞，作為額外資訊使用。
+        3. 確保每個額外資訊都只出現一次，不可以重複。
+        4. 資訊要和查詢有直接關係，但不可以和查詢內容有任何重複。
+
+        **目標查詢: {query}**
+        **輸出格式:整理成列表，每行一個，不要包含編號、前言或結尾。**"""
     else:
-        prompt = f"""You are an expert search optimizer. 
-        Please provide additional information for each of the key aspects of the following queries that make it easier to find relevant documents (about {size} words per query):
-        {query}
+        prompt = f"""You are an expert search optimizer.
+        Please follow these steps to provide {size} additional information for each key aspect of the target query to make it easier to find relevant documents.
         
-        Collect the output in a list, one per line, without numbering, preamble, or conclusion."""
+        **Steps:**
+        1. Extract nouns from the target query, including but not limited to: years, months, locations, organization names, event names, object names.
+        2. After extracting nouns, transform and extend them into related concise nouns to use as additional information.
+        3. Ensure each piece of additional information appears only once, no repetition.
+        4. The information must be directly related to the query, but cannot overlap with the query content.
+
+        **Target Query: {query}**
+        **Output Format: Organize as a list, one per line, without numbering, preamble, or conclusion.**
+        """
     try:
         client = Client()
         response = client.generate(model="granite4:3b", prompt=prompt, stream=False)
-        print("expand query response: ", response)
         expanded_keywords = [line.strip().lstrip('0123456789.)-• ')
                     for line in response.get("response", "").split('\n')
                     if line.strip()]
-        return [query] + expanded_keywords
+        # Combine original query with expanded keywords into one string
+        combined_query = query + " " + " ".join(expanded_keywords)
+        return combined_query
     except Exception as e:
         print(f"Error: {e}")
-        return [query]
+        return query
 
 
-def expand_query_2(query, language="en", size):
+def expand_query_2(query, language="en"):
     if language == "zh":
         prompt = f"""你是一個有幫助的問答助手。請回答以下問題：
         {query}
@@ -52,18 +69,18 @@ def expand_query_2(query, language="en", size):
         client = Client()
         response = client.generate(model="granite4:3b", prompt=prompt, stream=False)
         print("expand query response: ", response)
-        return [query] + response.get("response", "").split('\n')
+        return query + " " + " ".join(response.get("response", "").split('\n'))
     except Exception as e:
         print(f"Error: {e}")
-        return [query]
+        return query
 
-def retrieve_chunks(query, language="en", doc_ids=[], doc_names=[]):
-    row_chunks = chunk_row_chunks(query, language, doc_ids, doc_names)
+def retrieve_chunks(query, language="en", doc_ids=[]):
+    row_chunks = get_chunks_from_db(None, doc_ids, language)
     retriever = create_retriever(row_chunks, language)
-    retrieved_chunks = retriever.retrieve(query, top_k=10)
+    retrieved_chunks = retriever.retrieve(query, top_k=10, threshold=threshold)
     return retrieved_chunks
 
-def generate_answer(query, retrieved_chunks, language="en"):
-    #  TODO: Add query types
-    answer = generate_answer(query, retrieved_chunks, language, type="llm_chain")
+def generate_answer_llm(query, retrieved_chunks, language="en"):
+    from generator import generate_answer as gen_answer
+    answer = gen_answer(query, retrieved_chunks, language, type="llm_chain")
     return answer
