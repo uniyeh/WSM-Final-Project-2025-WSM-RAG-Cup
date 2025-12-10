@@ -97,6 +97,8 @@ def expand_query_2(query, language="en"):
         return query
 
 def expand_query_3(query, language="en"):
+    pass  # Placeholder for future implementation
+
 
 def retrieve_chunks(query, language="en", doc_ids=[]):
     row_chunks = get_chunks_from_db(None, doc_ids, language)
