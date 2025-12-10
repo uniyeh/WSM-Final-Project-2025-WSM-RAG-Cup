@@ -1,0 +1,1 @@
+{"domain": "Finance", "language": "zh", "query": {"query_id": 381, "query_type": "事实性问题", "content": "公司在2018年10月修订了什么政策？"}, "ground_truth": {"doc_ids": [17], "content": "公司治理政策。", "references": ["随后，在2018年10月，公司对治理框架进行了修订，增强了透明度、问责制和利益相关者参与程度。", "这一治理政策修订将提升公司治理透明度和问责制，增强利益相关者的信心。"], "keypoints": ["1. 公司在2018年10月修订了公司治理政策。"]}, "prediction": {"content": "", "references": []}}

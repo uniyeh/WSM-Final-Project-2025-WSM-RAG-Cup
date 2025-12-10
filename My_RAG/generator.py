@@ -4,17 +4,17 @@ import yaml
 from utils import load_ollama_config
 
 
-def load_prompts():
+def load_prompts(type="default"):
     prompts_path = Path(__file__).parent / "prompts.yaml"
     if not prompts_path.exists():
         raise FileNotFoundError("Prompts file not found.")
     with open(prompts_path, "r") as file:
-        return yaml.safe_load(file)
+        return yaml.safe_load(file)[type]
 
 
-def generate_answer(query, context_chunks, language="en"):
+def generate_answer(query, context_chunks, language="en", type="default"):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
-    prompts = load_prompts()
+    prompts = load_prompts(type)
     if language not in prompts:
         print(f"Warning: Language '{language}' not found in prompts. Falling back to 'en'.")
         language = "en"
