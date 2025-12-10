@@ -12,6 +12,11 @@ from name_router_chain_generator import generate_sub_query_answer, generate_comb
 def name_router_chain(query, language="en", prediction=None, doc_ids=[], doc_names=[]):
     query_text = query['query']['content']
     if (len(doc_ids) == 1):
+        if(language == 'en'):
+            query_type = query_classifier(query_text, language)
+            if (query_type == "COMPLEX"):
+                print("[Single Path-COMPLEX] query_text: ", query_text)
+                return single_complex_path(query_text, language, prediction, doc_ids, doc_names)
         return single_path(query_text, language, prediction, doc_ids, doc_names)
     else:
         return breakdown_path(query_text, language, prediction, doc_ids, doc_names)
@@ -67,6 +72,32 @@ def single_path(query_text, language="en", prediction=None, doc_id=[], doc_names
     print('final chunks: ', len(return_chunks))
     return answer, return_chunks
 
+
+def single_complex_path(query_text, language="en", prediction=None, doc_id=[], doc_names=[]):
+    modified_query_text = get_remove_names_from_text(query_text, doc_names)
+    #1. Retrieve bigger chunks(use BM25)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT content FROM documents WHERE doc_id IN ({})".format(','.join(map(str, doc_id))))
+    rows = cursor.fetchall()
+    docs = []
+    for row in rows:
+        docs.append({
+            "content": row[0],
+            "language": language
+        })
+    conn.close()
+    combined_answer = generate_complex_answer(query_text, docs, language)
+    retrieved_chunks = retrieve_bigger_chunks(combined_answer+' '+query_text, language, prediction, doc_id, doc_names)
+    print("[4] retrieve with smaller chunks and extract document name:")
+    small_retrieved_chunks, small_chunks = create_smaller_chunks_without_names(language, retrieved_chunks, doc_names)
+    retriever_2 = create_retriever(small_retrieved_chunks, language)
+    retrieved_small_chunks = retriever_2.retrieve(modified_query_text, top1_check=True) # retrieve for higher than the top 1 score * 0.5
+    return_chunks = []
+    for index, chunk in enumerate(retrieved_small_chunks):
+        return_chunks.append(small_chunks[chunk['chunk_index']])
+    print('chunks: ', len(return_chunks))
+    return combined_answer, return_chunks
 
 def breakdown_path(query_text, language="en", prediction=None, doc_ids=[], doc_names=[]):
     queries = []

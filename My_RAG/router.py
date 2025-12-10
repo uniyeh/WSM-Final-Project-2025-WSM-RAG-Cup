@@ -65,7 +65,7 @@ def name_matcher(query, language="en"):
             if (language == 'en'):
                 split_name = name.split(',')
                 match = True
-                for i in range(1, len(split_name)):
+                for i in range(0, len(split_name)):
                     if split_name[i] not in content:
                         match = False
                         break

@@ -8,6 +8,155 @@ import ast
 from generator import generate_answer
 import json
 
+def query_classifier(query, language="en"):
+    if (language == 'en'):
+        prompt = """
+### Role
+You are a Query Classifier.
+
+### Task
+Analyze the user's query and classify it into one of two categories:
+1. "SIMPLE": A direct factual question looking for a single specific attribute, definition, or fact about a single entity.
+2. "COMPLEX": A question that requires comparing two or more entities, aggregating data (counting, summing), or reasoning across multiple timeframes (multi-hop).
+
+### Output
+Return ONLY the category name: "SIMPLE" or "COMPLEX".
+
+### Examples
+Query: "When did Green Fields Agriculture Ltd. appoint a new CEO?" -> SIMPLE
+Query: "What percentage of equity did Green Fields Agriculture Co. acquire from Fertile Land Farms in September 2018?" -> SIMPLE
+Query: "According to the hospitalization records of Bridgewater General Hospital, what is the preliminary diagnosis for J. Reyes?" -> SIMPLE
+Query: "According to the judgment of Charleston, Linden, Court, what is the total amount of damage caused by J. Gonzalez in all her crimes?" -> COMPLEX
+Query: "How did compliance and regulatory updates in May 2019 contribute to reduced legal risk by December 2019?" -> COMPLEX
+Query: "List all events for Company A and Company B." -> COMPLEX
+
+### User Query
+{query}
+    """
+    else:
+        prompt = """
+### Role
+You are a Query Classifier.
+
+### Task
+Analyze the user's query and classify it into one of two categories:
+1. "SIMPLE": A direct factual question looking for a single specific attribute, definition, or fact about a single entity.
+    - If there are keywords like "什么", "多少", "谁", "哪里", "何时", "什么方式" in the query, it is "SIMPLE".
+2. "COMPLEX": A question that requires comparing two or more entities, aggregating data (counting, summing), or reasoning across multiple timeframes (multi-hop).
+    - If there are keywords like "如何", "所有的", "为什么", "怎么样", "共有几次" in the query, it is "COMPLEX".
+
+### Output
+Return ONLY the category name: "SIMPLE" or "COMPLEX".
+
+### Examples
+Query: "绿源环保有限公司未来环境保护计划的投资额是多少？" -> SIMPLE
+Query: "ACME公司如何通过债务重组和重大股权收购来提升市场竞争力的？" -> COMPLEX
+Query: "文化传媒有限公司在2019年3月分发了多少股利？" -> SIMPLE
+Query: "施某一共有几次伪造货币的犯罪行为？" -> COMPLEX
+Query: "柳某某通过什么方式贩卖伪造货币？" -> SIMPLE
+Query: "公司是如何通过债务重组、成本控制和净利润增长来改善财务状况的？" -> COMPLEX
+Query: "百和文化集团2017年7月建设了什么防止污染设施？" -> SIMPLE
+
+
+### User Query
+{query}
+    """ 
+    prompt = prompt.format(query=query)
+    print("query_classifier: ", prompt)
+    ollama_config = load_ollama_config()
+    client = Client(host=ollama_config["host"])
+    response = client.generate(model=ollama_config["model"], options={
+         "temperature": 0.1, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
+         "top_p": 0.9,
+         "top_k": 40,
+         "max_tokens": 2048,
+        #  "stream": True,
+    }, prompt=prompt)
+    print("query_classifier: ", response["response"])
+    return response["response"]
+
+def generate_complex_answer(query, docs, language="en"):
+    if language == "en":
+        prompt="""
+### Role
+You are a precise Document Summarizer.
+
+### Task
+Answer the user's question by synthesizing the provided court judgments. 
+Your output must be a single, fluent narrative sentence that cites the specific court and provides the exact supporting informations.
+Only output the answer, do not include any additional text.
+If you are not able to answer the question, output "Unable to answer.".
+
+### Reference Data
+<context>
+{context}
+</context>
+
+### Question
+{query}
+
+### Output Style Rules (CRITICAL)
+1. **Source Citation:** Start every claim with "According to the ...".
+2. **Handling Conflicts:** - If two different courts provide different facts for the same person, use a contrast structure.
+3. **Handling Counts & Frequencies:**
+   - You must state the total number AND list the specific timestamps/dates.
+
+### Examples of Desired Output
+**User Query:** "How much did V. Martin embezzle?"
+**Output:** "According to the judgment of Bayside, Roseville, Court, the total amount embezzled by V. Martin is $700,000. However, according to the ruling in Vandalia, Bayside Court, no money was embezzled by V. Martin."
+
+### Final Answer
+"""
+    else:
+        prompt='''
+### Role
+You are a precise Document Summarizer.
+
+### Task
+Answer the user's question by synthesizing the provided court judgments. 
+Your output must be a single, fluent narrative sentence that cites the specific court and provides the exact supporting informations.
+Only output the answer, do not include any additional text.
+If you are not able to answer the question, output "无法回答".
+Answer in Simplified Chinese.
+
+### Reference Data
+<context>
+{context}
+</context>
+
+### Question
+{query}
+
+### Output Style Rules (CRITICAL)
+1. **Source Citation:** Start every claim with "根据...".
+2. **Handling Conflicts:** - If two different courts provide different facts for the same person, use a contrast structure.
+3. **Handling Counts & Frequencies:**
+   - You must state the total number AND list the specific timestamps/dates.
+
+### Examples of Desired Output
+**User Query:** "根据紫陌市人民医院的住院病历，贝某某的初步诊断是什么？"
+**Output:** "根据病历，贝某某的初步诊断是右眼急性闭角型青光眼。"
+
+**User Query:** "根据彩虹市桐城区人民法院的判决书，费某一共有几次交通肇事行为？"
+**Output:** "根据判决书，费某一共有三次交通肇事行为：2023年2月15日晚上8时至9时、2023年2月28日早上7时至7时30分、2023年3月10日下午2时至2时30分。"
+
+### Final Answer
+'''
+    prompt = prompt.format(context="\n".join([doc['content'] for doc in docs]), query=query)
+    ollama_config = load_ollama_config()
+    client = Client(host=ollama_config["host"])
+    response = client.generate(model=ollama_config["model"], options={
+        "num_ctx": 32768,
+        "temperature": 0.3, 
+        "max_tokens": 1024,
+        "top_p": 0.9,
+        "top_k": 40,
+        "frequency_penalty": 0.1,
+        "presence_penalty": 0.1,
+        "stop": ['\n\n'],
+    }, prompt=prompt)
+    print("\ngenerate_complex_answer: ", response)
+    return response["response"]
 
 def construct_multiple_questions(query, language="en", doc_names=[]):
     prompt = """
