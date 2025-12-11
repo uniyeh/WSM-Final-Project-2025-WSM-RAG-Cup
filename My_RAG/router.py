@@ -3,6 +3,7 @@ import numpy as np
 from ollama import Client
 import os
 import sys
+from summary_router_chain import summary_router_chain
 from name_router_chain import name_router_chain
 from default_chain import default_chain
 from llm_router_chain import llm_router_chain
@@ -11,8 +12,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../db')
 from Connection import Connection
 DB_PATH = "db/dataset.db"
 
-# TODO: to be implemented
 def is_summary_router(query, language):
+    query_text = query['query']['content']
+    if language == "en":
+        if "Summarize" in query_text or "summarize" in query_text:
+            return True
+    else:
+        if "总结" in query_text:
+            return True
     return False
 
 def router(query, language="en"):
@@ -23,9 +30,9 @@ def router(query, language="en"):
     print("[Router] matching result: ", prediction, doc_id, matched_name)
 
     ## Step 1. summary chain (TODO)
-    # print("[Router][1] summary chain")
-    # if (is_summary_router(query, language)):
-    #     return summary_router_chain(query, language, prediction, doc_id, matched_name)
+    if (is_summary_router(query, language)):
+        print("[Router][1] summary chain")
+        return summary_router_chain(query, language, doc_id)
     
     ## Step 2. name_router chain
     if (prediction):
