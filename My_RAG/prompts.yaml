@@ -24,7 +24,6 @@ default:
     ### Answer
 
   zh: |
-    ### 指示
     ### Instruction
     You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
 
