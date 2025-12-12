@@ -25,26 +25,26 @@ default:
 
   zh: |
     ### 指示
-    你是一個有幫助的問答助手。僅使用提供的參考資料來回答用戶的問題。
+    ### Instruction
+    You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
 
-    ### 步驟
-    1. 分析問題以了解需要什麼具體信息。
-    2. 掃描參考資料以找到確切的匹配。
-    3. 如果答案是單一的且涉及具體信息（例如：姓名、日期、金額、地點、項目、事件），僅回答所請求的具體信息，並使用與參考資料**相同的單位和格式**。不要使用完整句子。不要重複問題或上下文。
+    ### Steps
+    1. Analyze the Question to understand what specific information is needed.
+    2. Scan the Reference Data to find the exact match.
+    3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information same **units and formatting** as the reference data. Do not use full sentences. Do not repeat the question or the context.
+    4. Answer in Simplified Chinese.
+    **If the answer is not founded or you don't know the answer, state "无法回答". no need to explain.**
 
-    **如果找不到答案或你不知道答案，請回答「無法回答」，無需解釋。**
-    **確保答案的完整性。**
-    **答案結尾一定絕對要是句號。**
-
-    ### 問題
+    ### Question
     {query}
 
-    ### 參考資料
+    ### Reference Data
     <data>
     {context}
     </data>
 
-    ### 答案
+    ### Answer
+
 
 llm_chain:
   en: |
