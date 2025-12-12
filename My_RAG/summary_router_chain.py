@@ -22,17 +22,19 @@ def get_contents_from_db(target_doc_ids):
             target_docs.append(content_string)
     return target_docs
 
-def generate_answer(query, context_chunks, language="en"):
+def generate_answer(query, context_chunks, language="en", prompt_type="summary_chain"):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
-    prompts = load_prompts(type="summary_chain")
+    prompts = load_prompts(type=prompt_type)
     if language not in prompts:
         print(f"Warning: Language '{language}' not found in prompts. Falling back to 'en'.")
         language = "en"
 
     prompt_template = prompts[language]
     prompt = prompt_template.format(query=query, context=context)
+    
     ollama_config = load_ollama_config()
     client = Client(host=ollama_config["host"])
+    
     response = client.generate(model=ollama_config["model"], options={
         "num_ctx": 32768,
         # "temperature": 0.3,
@@ -42,6 +44,7 @@ def generate_answer(query, context_chunks, language="en"):
         # "frequency_penalty": 0.1,
         # "presence_penalty": 0.1,
     }, prompt=prompt)
+    
     return response["response"]
 
 def summary_router_chain(query, language, doc_ids):
@@ -49,7 +52,7 @@ def summary_router_chain(query, language, doc_ids):
     contents = get_contents_from_db(target_doc_ids=doc_ids)
     context = [{"page_content": content} for content in contents]
     
-    raw_response = generate_answer(query_text, context, language)
+    raw_response = generate_answer(query_text, context, language, prompt_type="summary_chain")
     
     try:
         result_json = json.loads(raw_response)
@@ -67,5 +70,9 @@ def summary_router_chain(query, language, doc_ids):
         return result_json.get("answer", ""), formatted_retrieve
     
     except json.JSONDecodeError:
-        print("JSON Parse Error. Raw content:", raw_response)
-        return "Parsing Error", [{"page_content": raw_response}]
+        print("JSON Parse Error. Retry with fallback prompt")
+        answer = generate_answer(query_text, context, language, prompt_type="summary_chain_json_fallback")
+        if (language == "en" and answer == "Unable to answer") or (language == "zh" and answer == "无法回答"):
+            context = [{"page_content": ""}]
+        
+        return answer, context
