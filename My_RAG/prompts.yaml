@@ -94,7 +94,7 @@ summary_chain:
 
     ### Steps
     1. Analyze the Question to understand what specific information is needed.
-    2. Scan the document and Retrieve relevant sentence(s).
+    2. Read the document and Retrieve relevant sentence(s).
     3. Retrieved sentence(s) can be one or multiple. Please output the response in JSON format like this:
     {{
         "retrieve": ["relevant sentence 1", "relevant sentence 2", ...],
@@ -121,12 +121,57 @@ summary_chain:
 
     ### 步驟
     1. 分析問題以了解需要什麼具體信息。
-    2. 掃描整篇文章，並找出相關句子。
+    2. 閱讀整篇文章，並找出相關句子。
     3. 找回的相似句子可以是一個或多個。請以JSON格式輸出回答，如下所示：
     {{
         "retrieve": ["相關句子1", "相關句子2", ...],
         "answer": "答案內容必須以引號括起來。"
     }}
+
+    **如果找不到答案或你不知道答案，請回答「無法回答」，無需解釋。**
+    **確保答案的完整性。**
+    **答案結尾一定絕對要是句號。**
+
+    ### 問題
+    {query}
+
+    ### 文章
+    <data>
+    {context}
+    </data>
+
+    ### 答案
+
+summary_chain_json_fallback:
+  en: |
+    ### Instruction
+    You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
+
+    ### Steps
+    1. Analyze the Question to understand what specific information is needed.
+    2. Read the document, find the relevant information and answer the question.
+
+    **If the answer is not founded or you don't know the answer, state "Unable to answer." no need to explain.**
+    **Ensure the answer's completeness.**
+    **Answer MUST end with a period.**
+
+    ### Question
+    {query}
+
+    ### Document
+    <data>
+    {context}
+    </data>
+
+    ### Answer
+
+  zh: |
+    ### 指示
+    你是一個有幫助的問答助手。僅使用提供的參考資料來回答用戶的問題。
+
+    ### 步驟
+    1. 分析問題以了解需要什麼具體信息。
+    2. 閱讀文章，找到相關信息並回答問題。
 
     **如果找不到答案或你不知道答案，請回答「無法回答」，無需解釋。**
     **確保答案的完整性。**
