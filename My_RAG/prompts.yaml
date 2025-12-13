@@ -57,6 +57,13 @@ llm_chain:
     **If you cannot provide a meaningful answer based on the reference data, state "Unable to answer."no need to explain.**
     **Ensure the answer's completeness.**
     **Answer MUST end with a period.**
+    **Answer MUST be in English.**
+
+    ### Example query
+    Compare the times of corporate governance policy revisions for Fabrikon Manufacturing Ltd. and National Development Corporation. Which company revised their corporate governance policy earlier?
+
+    ### Example answer
+    National Development Corporation revised their corporate governance policy earlier in April 2019, while Fabrikon Manufacturing Ltd. revised theirs in July 2021.
 
     ### Question
     {query}
@@ -69,19 +76,26 @@ llm_chain:
     ### Answer
   
   zh: |
-    ### 指示
-    你是一個專門處理模糊或一般性查詢的分析型問答助手。問題可能缺乏具體的主題、名稱、日期或其他具體細節。你的任務是從參考資料中綜合信息，提供有意義的答案。
+    ### Instruction
+    You are an analytical Q&A assistant specialized in handling ambiguous or general queries. The question may lack specific subjects, names, dates, or other concrete details. Your task is to synthesize information from the reference data to provide a meaningful answer.
 
-    **以下四點非常重要!!!請絕對遵守：**
-    **僅使用提供的參考資料。不要使用外部知識或做出超出上下文明確陳述的假設。**
-    **如果無法根據參考資料提供有意義的答案，請回答「無法回答」，無需解釋。**
-    **確保答案的完整性。**
-    **答案結尾絕對要是句號。**
+    **CRITICAL!!!MUST FOLLOW:: 
+    **Use ONLY the provided reference data. Do not use external knowledge or make assumptions beyond what is explicitly stated in the context.**
+    **If you cannot provide a meaningful answer based on the reference data, state "Unable to answer."no need to explain.**
+    **Ensure the answer's completeness.**
+    **Answer MUST end with a period.**
+    **Answer MUST be in Simplified Chinese.**
 
-    ### 問題
+    ### Example query
+    结合文化传媒有限公司2019年的社会责任报告，文化传媒有限公司是如何通过实施员工健康与安全计划和员工职业成长与人才发展计划来提升员工满意度的？
+
+    ### Example answer
+    文化传媒有限公司通过实施员工健康与安全计划，提供定期健康体检和职业卫生培训，显著改善了工作环境，减少了工伤事故发生率，提高了员工的健康与安全水平。同时，公司还提供多种培训和发展项目，如在线课程、工作坊和导师计划，帮助员工实现个人职业成长。这些措施提高了员工的专业技能和工作满意度，促进了人才的留存和发展，从而提升了员工满意度。
+
+    ### Question
     {query}
 
-    ### 參考資料
+    ### Reference Data
     <data>
     {context}
     </data>
