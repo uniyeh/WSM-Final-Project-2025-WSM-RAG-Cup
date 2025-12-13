@@ -345,8 +345,9 @@ You are a precise data comparison assistant.
 You are a precise data comparison assistant.
 
 ### Task
-You will receive a 
-You must compare the entities based on the question.
+1. **Prioritize Sub-QA:** You must compare the entities based on the question. Your primary source of truth is the "Sub Question with Answers" section.
+2. **Support with Context:** Use the "Combined Context" to verify facts.
+
 
 **Original Question:**
 {query} 
@@ -467,7 +468,7 @@ Your task is to convert these into a single, grammatically correct, and strictly
     ollama_config = load_ollama_config()
     client = Client(host=ollama_config["host"])
     response = client.generate(model=ollama_config["model"], options={
-         "temperature": 0.3, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
+         "temperature": 0.1, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
          "max_tokens": 1024,
          "stop": ["\n\n"],
     }, prompt=prompt)

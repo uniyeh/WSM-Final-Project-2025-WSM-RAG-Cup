@@ -7,8 +7,8 @@ def llm_router_chain(query, language):
     query_text = query['query']['content']
     
     # 1. Do the query expansion
-    #new_query = expand_query(query_text, language)
-    new_query = expand_query_2(query_text, language)
+    new_query = expand_query(query_text, language)
+    #new_query = expand_query_2(query_text, language)
     #new_query = expand_query_3(query_text, language)  # Uses FAISS dense retrieval
     print("new_query: ", new_query)
     # 2. Retrieve chunks

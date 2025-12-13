@@ -5,8 +5,10 @@ import os
 import sys
 from summary_router_chain import summary_router_chain
 from name_router_chain import name_router_chain
+from time_router_chain import time_router_chain
 from default_chain import default_chain
 from llm_router_chain import llm_router_chain
+from entity_extractor import extract_entities
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../db')))
 from Connection import Connection
@@ -23,35 +25,58 @@ def is_summary_router(query, language):
     return False
 
 def router(query, language="en"):
-    ## Step 0. keywords matching
-    prediction, doc_id, matched_name = name_matcher(query, language)
-    # time_matcher(query, language)
-    # name_matcher(query, language)
+    ## Step 0. Extract entities from query
+    query_text = query['query']['content']
+    entities = extract_entities(query_text, language, use_llm=False)  # Use regex for speed
+    print(f"[Router] Extracted entities: {entities}")
+    
+    ## Step 1. keywords matching
+    prediction, doc_id, matched_name, name_entities = name_matcher(query, language)
+    # Merge entities from name_matcher
+    for key in entities:
+        if name_entities.get(key):
+            entities[key] = list(set(entities[key] + name_entities[key]))
+    
     print("[Router] matching result: ", prediction, doc_id, matched_name)
 
-    ## Step 1. summary chain (TODO)
+    ## Step 2. summary chain
     if (is_summary_router(query, language)):
-        print("[Router][1] summary chain")
+        print("[Router][2] summary chain")
         return summary_router_chain(query, language, doc_id)
     
-    ## Step 2. name_router chain
+    ## Step 3. name_router chain
     if (prediction):
-        print("[Router][2] name_router chain")
+        print("[Router][3] name_router chain")
         return name_router_chain(query, language, prediction, doc_id, matched_name)
+
+    ## Step 4. time_router chain (if temporal entities found)
+    if (entities['years'] or entities['months'] or entities['dates']):
+        print("[Router][4] time_router chain")
+        print(f"[Router] Using temporal filter: years={entities['years']}, months={entities['months']}")
+        return time_router_chain(query, language, doc_id)
     
-    ## Step 3. LLM chain (TODO)
-    print("[Router][3] LLM chain")
+    ## Step 5. LLM chain
+    print("[Router][5] LLM chain")
     return llm_router_chain(query, language)
 
-    ## Step 4. fallback to old default chain
+    ## Step 6. fallback to old default chain
     # print("[Router][4] fallback to old default chain")
     # return default_chain(query, language)
 
 def name_matcher(query, language="en"):
+    """
+    Match query to documents by name and extract temporal entities.
+    
+    Returns:
+        Tuple of (prediction, doc_id, matched_name, entities)
+    """
     content = query['query']['content']
     prediction = None
     doc_id = []
     matched_name = []
+    
+    # Extract temporal entities from query
+    entities = extract_entities(content, language, use_llm=False)
 
     # string matching logic
     conn = Connection(DB_PATH)
@@ -95,6 +120,7 @@ def name_matcher(query, language="en"):
                 doc_id.extend(name_docs[name]['doc_id']) 
                 matched_name.append(name)
     if (prediction):
+        doc_id = list(set(doc_id)) # Ensure unique doc_ids
         if (prediction == 'Medical'):
             if (len(matched_name) >= 1):
                 new_doc_id = []
@@ -114,7 +140,7 @@ def name_matcher(query, language="en"):
                         hospital_name = name.split("_")[0]
                         new_matched_name.append(hospital_name)
                     matched_name = new_matched_name
-        return prediction, doc_id, matched_name
+        return prediction, doc_id, matched_name, entities
 
     # # Try LLM-based matching
     # """
@@ -141,4 +167,5 @@ def name_matcher(query, language="en"):
     # except Exception as e:
     #     print(f"LLM name_router failed: {e}, falling back to string matching")
     
-    return None, [], []
+    # If no prediction, still return entities
+    return None, [], [], entities

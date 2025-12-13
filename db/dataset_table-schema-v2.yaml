@@ -1,0 +1,78 @@
+- table_name: documents
+  columns:
+  - name: id
+    type: INTEGER
+    constraints: PRIMARY KEY AUTOINCREMENT
+  - name: doc_id
+    type: INTEGER
+    constraints: NOT NULL
+  - name: domain
+    type: TEXT
+    constraints: NOT NULL
+  - name: language
+    type: TEXT
+    constraints: NOT NULL
+  - name: name
+    type: TEXT
+    constraints: NOT NULL
+  - name: content
+    type: TEXT
+    constraints: NOT NULL
+  - name: jsonl
+    type: TEXT
+    constraints: NOT NULL
+  # New entity fields
+  - name: years
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated years mentioned (e.g., '2017,2019')"
+  - name: months
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated months mentioned (e.g., 'March,April')"
+  - name: dates
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated dates mentioned (e.g., '2019-03-15,2020-04-20')"
+  - name: people
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated people names (e.g., 'James Peterson,Sarah Chen')"
+
+- table_name: chunks
+  columns:
+  - name: id
+    type: INTEGER
+    constraints: PRIMARY KEY AUTOINCREMENT
+  - name: doc_id
+    type: INTEGER
+    constraints: NOT NULL
+  - name: domain
+    type: TEXT
+    constraints: NOT NULL
+  - name: language
+    type: TEXT
+    constraints: NOT NULL
+  - name: name
+    type: TEXT
+    constraints: NOT NULL
+  - name: content
+    type: TEXT
+    constraints: NOT NULL
+  # New entity fields
+  - name: years
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated years mentioned in this chunk"
+  - name: months
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated months mentioned in this chunk"
+  - name: dates
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated dates mentioned in this chunk"
+  - name: people
+    type: TEXT
+    constraints: NULL
+    description: "Comma-separated people names mentioned in this chunk"
