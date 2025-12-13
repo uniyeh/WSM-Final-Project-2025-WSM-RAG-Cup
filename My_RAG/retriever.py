@@ -47,10 +47,10 @@ class BM25Retriever:
         scores = self.bm25.get_scores(tokenized_query)
         
         # Get top_k indices sorted by score
-        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
         
         # Filter by threshold (since sorted, can cut off when score drops below threshold)
-        if threshold > 0:
+        if threshold > -1:
             filtered_indices = []
             for idx in top_indices:
                 if scores[idx] > threshold:
