@@ -145,13 +145,13 @@ Answer in Simplified Chinese.
    - You must state the total number AND list the specific timestamps/dates.
 
 ### Examples of Desired Output
-**User Query:** "根据紫陌市人民医院的住院病历，贝某某的初步诊断是什么？"
-**Output:** "根据病历，贝某某的初步诊断是右眼急性闭角型青光眼。"
+**User Query:** "根据<hospital_name>的住院病历，<person>的初步诊断是什么？"
+**Output:** "根据病历，<person>的初步诊断是<diagnosis>。"
 
-**User Query:** "根据彩虹市桐城区人民法院的判决书，费某一共有几次交通肇事行为？"
-**Output:** "根据判决书，费某一共有三次交通肇事行为：2023年2月15日晚上8时至9时、2023年2月28日早上7时至7时30分、2023年3月10日下午2时至2时30分。"
+**User Query:** "根据<court_name>的判决书，<person>一共有几次<event>？"
+**Output:** "根据判决书，<person>一共有<numbers>次<event>：<datetime>、<datetime>、<datetime>。"
 
-### Final Answer
+### Final Answer(Simplified Chinese)
 '''
     prompt = prompt.format(context="\n".join([doc['content'] for doc in docs]), query=query)
     ollama_config = load_ollama_config()
@@ -166,7 +166,6 @@ Answer in Simplified Chinese.
         "presence_penalty": 0.1,
         "stop": ['\n\n'],
     }, prompt=prompt)
-    print("\ngenerate_complex_answer: ", response)
     return response["response"]
 
 def construct_multiple_questions(query, language="en", doc_names=[]):
@@ -269,7 +268,8 @@ Your goal is to construct a single, direct answer to the User's Original Questio
 """
     else:
         #zh
-        prompt = """### Role
+        prompt = """
+### Role
 You are a concise synthesis assistant. Your goal is to construct a single, direct answer to the User's Original Question by synthesizing provided Sub-Questions and Context.
 
 ### Task
@@ -387,32 +387,32 @@ You must compare the entities based on the question.
 
     if language == "en":
         final_prompt="""
-### Instruction
-You are a Natural Language Generator. 
-You will receive a "Raw Context" string containing key phrases separated by symbols (like "+" or "|").
-Your task is to convert these fragments into a single, grammatically correct, and fluent sentence.
+### Role
+You are a Precise Comparison Generator.
+Your task is to write a single, fluent comparison sentence based on the provided "Context" and "Query".
 
-### Guidelines
-1. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
-2. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
-3. **Format:** The output should be in the format of a comparison sentence.
+### Strict Rules
+1. **Source of Truth:** Trust the **Context** above all else. If the "Comparison Result" fragments contradict the Context (e.g., fragments say "larger" but Context shows numbers are equal), follow the Context.
+2. **Grammar:** Combine the fragments into a fluent sentence. Do not include introductory text.
 
-### Connect Logic Example(**focus on the format**)
-1. If the query asks about "which had higher/lower/less/more/earlier", follow the example format below.
-- Question: Compare the operating income of Artistic Creations Inc. in 2019 and EduCorp in 2020. Which company had higher operating income?
-- Answer: EduCorp had higher operating income in 2020 with $150 million, compared to Artistic Creations Inc.'s $30 million in 2019.
-- Question: Compare the dividend distributions of Culture Innovators Ltd. in 2021 and SkyQuest Airlines in 2017. Which company distributed more dividends?
-- Answer: SkyQuest Airlines distributed more dividends in 2017 with $50 million compared to Culture Innovators Ltd.'s $5 million in 2021.
-- Question: Compare the total assets of CleanCo Housekeeping Services in 2018 and Retail Emporium in 2020. Which company had more total assets?
-- Answer: Retail Emporium had more total assets in 2020 with $1 billion compared to CleanCo Housekeeping Services' $40 million in 2018.
-2. If the answer is "same", follow the example format below.
-- Question: Compare the net profit of Culture Innovators Ltd. in 2021 and Sunrise Holidays in 2019. Which company had a higher net profit?
-- Answer: Both Culture Innovators Ltd. in 2021 and Sunrise Holidays in 2019 had the same net profit of $12 million.
+### Sentence Patterns (Must Follow)
 
-### Question
+**Condition A: IF the values in Context are EQUAL**
+* **Template:** "Both <Entity A> and <Entity B> <action> the same <attribute> of <value>."
+* *Example:* "Both Company A in 2020 and Company B in 2021 distributed the same dividends of $5 million."
+
+**Condition B: IF the values are DIFFERENT (One is higher/more)**
+* **Template:** "<Winner> <action> more/higher <attribute> (<Winner Value>), compared to <Loser>'s <attribute> (<Loser Value>)."
+* *Example:* "Company A distributed more dividends ($10 million) compared to Company B's distribution ($5 million)."
+
+### Input Data
+**Query:**
 {query}
 
-### Raw Context
+**Context:**
+{context}
+
+**Comparison Fragments (Reference Only):**
 {answer}
 
 ### Natural Sentence
@@ -420,36 +420,50 @@ Your task is to convert these fragments into a single, grammatically correct, an
     else:
         final_prompt="""
 ### Instruction
-You are a Natural Language Generator. 
-You will receive a "Raw Context" string containing key phrases separated by symbols (like "+" or "|").
-Your task is to convert these fragments into a single, grammatically correct, and fluent sentence.
+You are a Natural Language Generator specialized in Chinese text.
+You will receive a "Comparison Result" string, "Context", and "Question".
+Your task is to convert these into a single, grammatically correct, and strictly formatted **Simplified Chinese** sentence.
 
 ### Guidelines
-1. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
-2. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
-3. **Format:** The output should be in the format of a comparison sentence.
-4. Answer in **Simplified Chinese**.
+1. **Strict Format:** You must follow the sentence templates exactly.
+2. **No Repetition:** Do not list the values separately before summarizing.
+   - **BAD:** "A is 10%, B is 10%, therefore they are the same." (REJECT THIS STYLE)
+   - **GOOD:** "A and B are the same, both are 10%."
+3. **Merge Subjects:** When values are the same, merge the entities immediately at the start of the sentence.
+4. **Source of Truth:** Trust the specific numbers/dates in the "Context".
 
-### Connect Logic Example(**focus on the format**)
-1. If the query asks about "which had higher/lower/less/more/earlier"(更高/更低/更少/更多/更早), follow the example format below.
-- Question: 比较旅游乐园有限公司和云翼航空有限公司的二氧化碳排放量，哪家公司的排放量更高？
-- Answer: 云翼航空有限公司的二氧化碳排放量更高，为10000吨，而旅游乐园有限公司的二氧化碳排放量为5000吨。
-- Question: 比较美好家政服务有限公司和文化传媒有限公司分别发生道德与诚信事件的时间，哪家公司事件发生时间更早？
-- Answer: 美好家政服务有限公司的道德与诚信事件发生时间更早，发生在2018年1月，而文化传媒有限公司的道德与诚信事件发生在2019年1月。
-2. If the answer is "same"(相同), follow the example format below.
-- Question: 比较智慧教育科技有限公司和盈利家居服务有限公司的员工满意度，哪家公司的员工满意度更高？
-- Answer: 智慧教育科技有限公司和盈利家居服务有限公司的员工满意度相同，均为85%。
+### Sentence Templates (Strict Enforcement)
 
-### Question
+**Condition 1: When values are the SAME (相同)**
+* **Structure:** `<Entity A>和<Entity B>的<Attribute>相同，均为<Value>。`
+* **Examples:**
+   - Query: 比较A和B的营收。
+   - Answer: A公司和B公司的营收相同，均为100亿元。
+   - Query: 比较A和B的净资产收益率。
+   - Answer: 2019年云翼航空和2020年建天建筑的净资产收益率相同，均为10%。
+
+**Condition 2: When values are DIFFERENT (不同 - Higher/Lower/Earlier/Later)**
+* **Structure:** `<Winner>的<Attribute><Comparative Adjective>，为<Winner Value>，而<Loser>的<Attribute>为<Loser Value>。`
+* **Examples:**
+   - Query: 谁的营收更高？
+   - Answer: 2019年A公司的营收更高，为5000万元，而2018年B公司的营收为3000万元。
+   - Query: 谁发生得更早？
+   - Answer: A公司的重组发生得更早，发生在2015年，而B公司发生在2018年。
+
+### Input Data
+**Question:**
 {query}
 
-### Raw Context
+**Context:**
+{context}
+
+**Comparison Result Fragments:**
 {answer}
 
-### Natural Sentence
+### Natural Sentence (in Simplified Chinese)
 """
-    prompt = final_prompt.format(answer=answer, query=original_query)
-    
+    context = "\n\n".join([chunk['metadata']['name'] + ": " + chunk['page_content'] for chunk in combined_chunks])
+    prompt = final_prompt.format(answer=answer, query=original_query, context=context)
     ollama_config = load_ollama_config()
     client = Client(host=ollama_config["host"])
     response = client.generate(model=ollama_config["model"], options={
