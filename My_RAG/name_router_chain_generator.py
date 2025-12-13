@@ -393,14 +393,24 @@ You will receive a "Raw Context" string containing key phrases separated by symb
 Your task is to convert these fragments into a single, grammatically correct, and fluent sentence.
 
 ### Guidelines
-1. **Connect Logic:** Add necessary prepositions (of, in, by, to) and possession markers ('s) to make the sentence flow naturally.
-2. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
-3. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
+1. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
+2. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
+3. **Format:** The output should be in the format of a comparison sentence.
 
-### Example Answers(**focus on the format**)
-Both Z. Torres and Z. Ruiz were fined $100,000. Therefore, their total fine amounts are the same.
-duCorp had higher operating income in 2020 with $150 million, compared to Artistic Creations Inc.'s $30 million in 2019.
-SkyQuest Airlines distributed more dividends in 2017 with $50 million compared to Culture Innovators Ltd.'s $5 million in 2021.
+### Connect Logic Example(**focus on the format**)
+1. If the query asks about "which had higher/lower/less/more/earlier", follow the example format below.
+- Question: Compare the operating income of Artistic Creations Inc. in 2019 and EduCorp in 2020. Which company had higher operating income?
+- Answer: EduCorp had higher operating income in 2020 with $150 million, compared to Artistic Creations Inc.'s $30 million in 2019.
+- Question: Compare the dividend distributions of Culture Innovators Ltd. in 2021 and SkyQuest Airlines in 2017. Which company distributed more dividends?
+- Answer: SkyQuest Airlines distributed more dividends in 2017 with $50 million compared to Culture Innovators Ltd.'s $5 million in 2021.
+- Question: Compare the total assets of CleanCo Housekeeping Services in 2018 and Retail Emporium in 2020. Which company had more total assets?
+- Answer: Retail Emporium had more total assets in 2020 with $1 billion compared to CleanCo Housekeeping Services' $40 million in 2018.
+2. If the answer is "same", follow the example format below.
+- Question: Compare the net profit of Culture Innovators Ltd. in 2021 and Sunrise Holidays in 2019. Which company had a higher net profit?
+- Answer: Both Culture Innovators Ltd. in 2021 and Sunrise Holidays in 2019 had the same net profit of $12 million.
+
+### Question
+{query}
 
 ### Raw Context
 {answer}
@@ -415,22 +425,30 @@ You will receive a "Raw Context" string containing key phrases separated by symb
 Your task is to convert these fragments into a single, grammatically correct, and fluent sentence.
 
 ### Guidelines
-1. **Connect Logic:** Add necessary prepositions (of, in, by, to) and possession markers ('s) to make the sentence flow naturally.
-2. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
-3. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
+1. **Preserve Meaning:** Do not change the original meaning or facts, using all the information in the context.
+2. **No Fluff:** Do not add introductory phrases like "The sentence is..." or "Here is the result." Just output the sentence.
+3. **Format:** The output should be in the format of a comparison sentence.
 4. Answer in **Simplified Chinese**.
 
-### Example Answers(**focus on the format**)
-云翼航空有限公司的二氧化碳排放量更高，为10000吨，而旅游乐园有限公司的二氧化碳排放量为5000吨。
-赵某某和柏某的判决时间都是2023年10月15日。
-于某某的年龄为79岁，元某某的年龄为12岁。两者年龄差异为67岁。
+### Connect Logic Example(**focus on the format**)
+1. If the query asks about "which had higher/lower/less/more/earlier"(更高/更低/更少/更多/更早), follow the example format below.
+- Question: 比较旅游乐园有限公司和云翼航空有限公司的二氧化碳排放量，哪家公司的排放量更高？
+- Answer: 云翼航空有限公司的二氧化碳排放量更高，为10000吨，而旅游乐园有限公司的二氧化碳排放量为5000吨。
+- Question: 比较美好家政服务有限公司和文化传媒有限公司分别发生道德与诚信事件的时间，哪家公司事件发生时间更早？
+- Answer: 美好家政服务有限公司的道德与诚信事件发生时间更早，发生在2018年1月，而文化传媒有限公司的道德与诚信事件发生在2019年1月。
+2. If the answer is "same"(相同), follow the example format below.
+- Question: 比较智慧教育科技有限公司和盈利家居服务有限公司的员工满意度，哪家公司的员工满意度更高？
+- Answer: 智慧教育科技有限公司和盈利家居服务有限公司的员工满意度相同，均为85%。
+
+### Question
+{query}
 
 ### Raw Context
 {answer}
 
 ### Natural Sentence
 """
-    prompt = final_prompt.format(answer=answer)
+    prompt = final_prompt.format(answer=answer, query=original_query)
     
     ollama_config = load_ollama_config()
     client = Client(host=ollama_config["host"])
