@@ -476,3 +476,68 @@ Your task is to convert these into a single, grammatically correct, and strictly
     print("final compare answer: ", answer)
 
     return answer
+
+def generate_medical_answer(query, docs, language):
+    if language == "en":
+        prompt = """
+### Instruction
+You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
+
+### Steps
+1. Analyze the Question to understand what specific information is needed.
+2. Scan the Reference Data to find the exact match.
+3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information with the SAME format as the reference data. Do not use full sentences. Do not repeat the question or the context.
+4. Use "." to end the answer.
+
+**If the answer is not founded or you don't know the answer, state "Unable to answer." no need to explain.**
+**Ensure the answer's completeness.**
+**Answer MUST end with a period.**
+
+### Question
+{query}
+
+### Reference Data
+<data>
+{context}
+</data>
+
+### Answer
+        """
+    else:
+        prompt = """
+### Instruction
+You are a helpful Q&A assistant. Answer the user's question using ONLY the provided reference data.
+
+### Steps
+1. Analyze the Question to understand what specific information is needed.
+2. Scan the Reference Data to find the exact match.
+3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information same **units and formatting** as the reference data. **Do not use full sentences.** Do not repeat the question or the context.
+4. No need to add "。" at the end of the answer.
+5. Answer in Simplified Chinese.
+
+**If the answer is not founded or you don't know the answer, state ONLY "无法回答" and no need to explain.**
+
+### Question
+{query}
+
+### Reference Data
+<data>
+{context}
+</data>
+
+### Answer
+        """
+    prompt = prompt.format(context="\n".join([doc['content'] for doc in docs]), query=query)
+    ollama_config = load_ollama_config()
+    client = Client(host=ollama_config["host"])
+    response = client.generate(model=ollama_config["model"], options={
+        "num_ctx": 32768,
+        "temperature": 0.3, # [0.0, 1.0], 0.0 is more deterministic, 1.0 is more random and creative
+        "max_tokens": 1024,
+        "stop": ["\n\n"],
+    }, prompt=prompt)
+
+    answer = response["response"]
+    print("final compare answer: ", answer)
+    return answer
+    
