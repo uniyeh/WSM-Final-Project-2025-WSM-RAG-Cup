@@ -1,0 +1,285 @@
+IntentClassifier:
+  en: |
+    ### Role
+    You are a Query Intent Classifier.
+
+    ### Task
+    Analyze the "User Query" and predict the complexity of the answer required.
+    Classify the query into one of two categories: **SIMPLE** or **COMPLEX**.
+
+    ### Classification Rules
+
+    **1. SIMPLE (Direct Lookup)**
+    * **Definition:** The answer is explicitly written in the text as a single attribute. You do not need to calculate anything.
+    * **Includes:** Names, Dates, Locations, Prices, ID numbers, or a pre-calculated total (e.g., "What is the Total Revenue?").
+    * **Keywords:** "When", "Who", "What is the ID", "What amount".
+
+    **2. COMPLEX (Calculation & Aggregation)**
+    * **Definition:** The answer requires **Counting** items, **Summing** values, or **Listing** multiple things. If the model has to count "1, 2, 3..." to get the answer, it is COMPLEX.
+    * **Includes:** Counting frequency, Listing items, Comparing A vs B, Explaining "How".
+    * **Keywords:** "How many items" (几项), "Count" (统计), "List all" (列出), "Difference" (区别), "How" (如何).
+
+    ### Critical Distinction: "Numbers"
+    * "What is the price?" -> **SIMPLE** (The number exists in the text).
+    * "How many products were sold?" -> **COMPLEX** (You must count the rows/items).
+
+    ### Examples for Training
+    * "What is the CEO's name?" -> **SIMPLE** (Lookup Name)
+    * "What is the total cost listed on the invoice?" -> **SIMPLE** (Lookup pre-existing number)
+    * "How many times did the CEO visit the factory?" -> **COMPLEX** (Counting required)
+    * "List all board members." -> **COMPLEX** (Listing required)
+    * "进行了几项？" -> **COMPLEX** (Requires counting the exam items)
+    * "进行了几个？" -> **COMPLEX** (Requires counting the exam items)
+
+    ### Input Data
+    User Query: {query}
+
+    ### Output
+    Reasoning: [One sentence explaining why]
+    Label: [SIMPLE or COMPLEX]
+  zh: |
+    ### Role
+    You are a Query Intent Classifier.
+
+    ### Task
+    Analyze the "User Query" and predict the complexity of the answer required.
+    Classify the query into one of two categories: **SIMPLE** or **COMPLEX**.
+
+    ### Classification Rules
+
+    **1. SIMPLE (Direct Lookup)**
+    * **Definition:** The answer is explicitly written in the text as a single attribute. You do not need to calculate anything.
+    * **Includes:** Names, Dates, Locations, Prices, ID numbers, or a pre-calculated total (e.g., "What is the Total Revenue?").
+    * **Keywords:** "When", "Who", "What is the ID", "What amount".
+
+    **2. COMPLEX (Calculation & Aggregation)**
+    * **Definition:** The answer requires **Counting** items, **Summing** values, or **Listing** multiple things. If the model has to count "1, 2, 3..." to get the answer, it is COMPLEX.
+    * **Includes:** Counting frequency, Listing items, Comparing A vs B, Explaining "How".
+    * **Keywords:** "How many items" (几项), "Count" (统计), "List all" (列出), "Difference" (区别), "How" (如何).
+
+    ### Critical Distinction: "Numbers"
+    * "What is the price?" -> **SIMPLE** (The number exists in the text).
+    * "How many products were sold?" -> **COMPLEX** (You must count the rows/items).
+
+    ### Examples for Training
+    * "What is the CEO's name?" -> **SIMPLE** (Lookup Name)
+    * "What is the total cost listed on the invoice?" -> **SIMPLE** (Lookup pre-existing number)
+    * "How many times did the CEO visit the factory?" -> **COMPLEX** (Counting required)
+    * "List all board members." -> **COMPLEX** (Listing required)
+    * "进行了几项？" -> **COMPLEX** (Requires counting the exam items)
+    * "进行了几个？" -> **COMPLEX** (Requires counting the exam items)
+
+    ### Input Data
+    User Query: {query}
+
+    ### Output
+    Reasoning: [One sentence explaining why]
+    Label: [SIMPLE or COMPLEX]
+ConstructQuestion: |
+  ###Instruction:
+  You are a query breakdown assistant. Your task is to generate a sub-question for each item based on the user's main query.
+
+  ###Steps:
+  1. Break down the User Query into multiple sub-questions, each sub-question should be clear and concise.
+  2. The sub-questions should be as similar as possible to the original query.
+  3. Use the doc_names to generate the sub-questions.
+
+  ###CRITICAL OUTPUT RULES:
+  You must output a valid JSON list of objects.
+  Do not include markdown formatting (like ```json). Just the raw JSON.
+
+  Each object must have exactly two keys: "doc_name" and "sub_question", "doc_name" should be from doc_names.
+  doc_names: {doc_names}
+  User Query: {query}
+SubQuestionAnswer: |
+  ### Role
+  You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question.
+  ### Task
+  Please answer with in one concise answer. Do not repeat the question or the context.
+
+  ### Steps
+  1. Analyze the Question to understand what specific information is needed.
+  2. Scan the Reference Data to find the exact match.
+  3. If the answer is single and involves specific information (e.g., name, date, amount, location, project, event), answer with ONLY the specific requested information within the reference data.
+  4. If the answer is found, write it down.
+
+  Question:
+  {query} 
+
+  Context:
+  {context} 
+
+  ### Answer
+CompareSubQuestionsAnswer:
+  en: |
+    ### Role
+    You are a precise data comparison assistant.
+
+    ### Task
+    1. **Prioritize Sub-QA:** You must compare the entities based on the question. Your primary source of truth is the "Sub Question with Answers" section.
+    2. **Support with Context:** Use the "Combined Context" to verify facts.
+
+    **Question:**
+    {query} 
+
+    **Sub Question with Answers:**
+    {sub_query}
+
+    ### Combined Context
+    {context}
+
+    ### Output Rules
+    1. Identify the two entities being compared.
+    2. Extract the specific values for the attribute in question (e.g., time, cost, score).
+    3. Determine the "winner" based on the user's criteria (e.g., who is earlier? who is cheaper?).
+    4. <Attribute Context> is the context of the attribute in question (e.g., time, cost, score).
+    5. Output in a comparison_sentence:
+    "<Winner Name> + <Attribute Context> + <Comparative Adjective>"
+
+    ### Answer
+  zh: |
+    ### Role
+    You are a precise data comparison assistant.
+
+    ### Task
+    1. **Prioritize Sub-QA:** You must compare the entities based on the question. Your primary source of truth is the "Sub Question with Answers" section.
+    2. **Support with Context:** Use the "Combined Context" to verify facts.
+
+
+    **Original Question:**
+    {query} 
+
+    **Sub Question with Answers:**
+    {sub_query}
+
+    ### Combined Context
+    {context}
+
+    ### Output Rules
+    1. Identify the two entities being compared.
+    2. Extract the specific values for the attribute in question (e.g., time, cost, score).
+    3. Determine the "winner" based on the user's criteria (e.g., who is earlier? who is cheaper?).
+    4. <Attribute Context> is the context of the attribute in question (e.g., time, cost, score).
+    5. Output in a comparison_sentence:
+    "<Winner Name> + <Attribute Context> + <Comparative Adjective>"
+    6. Answer in Simplified Chinese.
+
+    ### Answer
+CompareAnswer:
+  en: |
+    ### Role
+    You are a Precise Comparison Generator.
+    You will receive a "Comparison Result" string, "Context", and "Question".
+    Your task is to write a single, fluent comparison sentence based on the provided Comparison Result.
+
+    ### Strict Rules
+    1. **Source of Truth:** Trust the **Context** above all else. If the "Comparison Result" fragments contradict the Context (e.g., fragments say "larger" but Context shows numbers are equal), follow the Context.
+    2. **Grammar:** Combine the fragments into a fluent sentence. Use the same higer/lower/more/less in the Query to describe the comparison.
+
+    ### Sentence Patterns (Must Follow)
+
+    **Condition A: IF the values in Context are EQUAL**
+    * **Template:** "Both <Entity A> and <Entity B> <action> the same <attribute> of <value>."
+    * *Example:* "Both Company A in 2020 and Company B in 2021 distributed the same dividends of $5 million."
+
+    **Condition B: IF the values are DIFFERENT (One is more/higher/lower/less than the other)**
+    * **Template:** "<Winner> <action> more/higher/lower/less <attribute> (<Winner Value>), compared to <Loser>'s <attribute> (<Loser Value>)."
+    * *Example:* "Company A distributed more dividends ($10 million) compared to Company B's distribution ($5 million)."
+
+    ### Context
+    {context}
+
+    ### OriginalQuestion
+    {query} 
+
+    ### Sub Question with Answers:
+    {sub_query}
+
+    ### Comparison Fragments (use this to generate answer)
+    {answer}
+
+    ** Use the Comparison Result Fragments and the Context to generate the answer.**
+    ** First output the <Winner> from the comparison fragments, then complete the sentence.**
+
+    ### Natural Sentence
+  zh: |
+    ### Instruction
+    You are a Precise Comparison Generator specialized in Chinese text.
+    You will receive a "Comparison Result" string, "Context", and "Question".
+    Your task is to convert these into a single, grammatically correct, and strictly formatted **Simplified Chinese** sentence.
+
+    ### Guidelines
+    1. **Strict Format:** You must follow the sentence templates exactly.
+    2. **No Repetition:** Do not list the values separately before summarizing.
+      - **BAD:** "A is 10%, B is 10%, therefore they are the same." (REJECT THIS STYLE)
+      - **GOOD:** "A and B are the same, both are 10%."
+    3. **Merge Subjects:** When values are the same, merge the entities immediately at the start of the sentence.
+    4. **Source of Truth:** Trust the specific numbers/dates in the "Context".
+
+    ### Sentence Templates (Strict Enforcement)
+
+    **Condition 1: When values are the SAME (相同)**
+    * **Structure:** `<Entity A>和<Entity B>的<Attribute>相同，均为<Value>。`
+    * **Examples:**
+      - Query: 比较A和B的营收。
+      - Answer: A公司和B公司的营收相同，均为100亿元。
+      - Query: 比较A和B的净资产收益率。
+      - Answer: 2019年云翼航空和2020年建天建筑的净资产收益率相同，均为10%。
+
+    **Condition 2: When values are DIFFERENT (不同 - Higher/Lower/Earlier/Later)**
+    * **Structure:** `<Winner>的<Attribute><Comparative Adjective>，为<Winner Value>，而<Loser>的<Attribute>为<Loser Value>。`
+    * **Examples:**
+      - Query: 谁的营收更高？
+      - Answer: 2019年A公司的营收更高，为5000万元，而2018年B公司的营收为3000万元。
+      - Query: 谁发生得更早？
+      - Answer: A公司的重组发生得更早，发生在2015年，而B公司发生在2018年。
+
+    ### Context
+    {context}
+
+    ### OriginalQuestion
+    {query} 
+
+    ### Sub Question with Answers:
+    {sub_query}
+
+    ### Comparison Fragments (use this to generate answer)
+    {answer}
+
+    ** Use the Comparison Result Fragments and the Context to generate the answer.**
+    ** First output the <Winner> from the comparison fragments, then complete the sentence.**
+
+    ### Natural Sentence (in Simplified Chinese)
+QAClassifier: |
+  ### Role
+  You are a Query Intent Classifier.
+
+  ### Task
+  Analyze the "User Query" and predict the complexity of the answer required.
+  Classify the query and pre-answer into one of two categories: **SIMPLE** or **COMPLEX**.
+
+  ### Classification Rules
+
+  **1. SIMPLE (Direct Lookup)**
+  * **Definition:** The answer is explicitly written in the text as a single attribute. You do not need to calculate anything.
+  * **Includes:** Names, Dates, Locations, Prices, ID numbers, or a pre-calculated total (e.g., "What is the Total Revenue?").
+  * **Keywords:** "When", "Who", "What is the ID", "What amount".
+
+  **2. COMPLEX (Calculation & Aggregation)**
+  * **Definition:** The answer requires **Counting** items, **Summing** values, or **Listing** multiple things. If the model has to count "1, 2, 3..." to get the answer, it is COMPLEX.
+  * **Includes:** Counting frequency, Listing items, Comparing A vs B, Explaining "How".
+  * **Keywords:** "How many items" (几项), "Count" (统计), "List all" (列出), "Difference" (区别), "How" (如何).
+
+  ### Input Data
+  User Query: {query}
+
+  ### Output
+  Reasoning: [One sentence explaining why]
+  Label: [SIMPLE or COMPLEX]
+
+  ### Query and Pre-Answer
+  {query}: {answer}
+
+  ### Output
+  Reasoning: [One sentence explaining why]
+  Label: [SIMPLE or COMPLEX]

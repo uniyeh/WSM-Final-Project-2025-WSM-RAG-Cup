@@ -522,9 +522,11 @@ class KEYPOINT_METRICS:
 
     def __init__(self, use_openai = True, model='gpt-oss:20b', version='v1'):
         # 初始化任何必要的属性
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434/v1")
+        print(base_url)
         self.client = OpenAI(
             api_key="ollama",
-            base_url="http://localhost:11434/v1"
+            base_url=base_url
         )
         self.use_openai = use_openai
         self.model = model
