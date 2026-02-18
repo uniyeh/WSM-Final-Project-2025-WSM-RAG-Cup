@@ -19,7 +19,6 @@ def main(query_path, docs_path, language, output_path):
     queries = load_jsonl(query_path)
 
     for query in tqdm(queries, desc="Processing Queries"):
-        print("Routing query[{}]: {}".format(query['query']['query_id'], query['query']['content']))
         # Route query to chains
         answer, return_chunks = router(query, language)
         # save answer and chunks

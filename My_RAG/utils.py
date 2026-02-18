@@ -1,6 +1,14 @@
 import jsonlines
 from pathlib import Path
 import yaml
+import sys
+import os
+# Add parent directory to path to allow importing from db
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from db.Connection import Connection
+DB_PATH = "db/dataset.db"
+
 
 def load_jsonl(file_path):
     docs = []
@@ -37,3 +45,19 @@ def load_ollama_config() -> dict:
     assert "host" in config["ollama"], "Ollama host not specified in config file."
     assert "model" in config["ollama"], "Ollama model not specified in config file."
     return config["ollama"]
+
+def load_prompts(file_path: str, type: str = "default"):
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Prompts file not found at: {path}")
+    
+    with open(path, "r") as file:
+        data = yaml.safe_load(file)
+        if type not in data:
+            raise KeyError(f"Key '{type}' not found in prompts file.")
+        return data[type]
+
+class DatasetConnection(Connection):
+    def __init__(self):
+        super().__init__(DB_PATH)
+        
